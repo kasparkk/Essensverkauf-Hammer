@@ -61,6 +61,7 @@ bleibt, wenn das Betriebssystem es rund oder abgerundet zuschneidet.
 | `icon.svg`    | Quelle des App-Icons (Burger auf Hintergrundkachel) |
 | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Aus `icon.svg` gerenderte Homescreen-Icons |
 | `manifest.webmanifest` | Web-App-Manifest (Name, Farben, Icons)    |
+| `_headers`    | Netlify: korrekter MIME-Typ für das Manifest       |
 
 ## Hosting
 
