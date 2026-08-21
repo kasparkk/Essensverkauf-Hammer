@@ -1,0 +1,229 @@
+:root {
+  --paper: #faf6ee;
+  --ink: #2b2320;
+  --ink-soft: #5c5148;
+  --accent: #b3502b;
+  --line: #e2d8c6;
+  --der: #2f6f4f;
+  --die: #b3502b;
+  --das: #375a9e;
+  --radius: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f3ece0, #e9dfcc);
+  color: var(--ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px 64px;
+}
+
+.app {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.app__header {
+  text-align: center;
+}
+
+.app__header h1 {
+  margin: 0 0 6px;
+  font-size: 2.1rem;
+  letter-spacing: 0.5px;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  box-shadow: 0 12px 30px rgba(60, 45, 25, 0.12);
+  position: relative;
+}
+
+.card__gender {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  text-transform: lowercase;
+}
+
+.card__gender[data-gender="der"] { color: var(--der); border-color: var(--der); }
+.card__gender[data-gender="die"] { color: var(--die); border-color: var(--die); }
+.card__gender[data-gender="das"] { color: var(--das); border-color: var(--das); }
+
+.card__word {
+  margin: 4px 0 4px;
+  font-size: 2.1rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.card__meta {
+  margin: 0 0 20px;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-style: italic;
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: 16px;
+}
+
+.card__meaning,
+.card__example {
+  margin: 0 0 10px;
+  line-height: 1.55;
+}
+
+.card__example {
+  color: var(--ink-soft);
+}
+
+.card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: white;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.btn:hover:not(:disabled) {
+  box-shadow: 0 4px 10px rgba(60, 45, 25, 0.15);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+.btn--secondary {
+  background: white;
+  color: var(--ink);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  padding: 6px 10px;
+}
+
+.favorites {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+
+.favorites__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.favorites__header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.favorites__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.favorites__empty {
+  color: var(--ink-soft);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.favorite-item {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.favorite-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.favorite-item__word {
+  font-weight: 700;
+}
+
+.favorite-item__gender {
+  color: var(--ink-soft);
+  font-weight: 400;
+  text-transform: lowercase;
+  margin-right: 4px;
+}
+
+.favorite-item__meaning {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin-top: 2px;
+}
+
+.app__footer {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 24px 18px;
+  }
+  .card__word {
+    font-size: 1.6rem;
+  }
+}

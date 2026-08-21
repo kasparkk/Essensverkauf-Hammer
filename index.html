@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wortschmiede – erfundene deutsche Wörter</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app__header">
+      <h1>🔨 Die Wortschmiede</h1>
+      <p class="subtitle">
+        Erfindet deutsche Wörter, die es (noch) nicht gibt – samt Bedeutung, Wortart und Beispielsatz.
+      </p>
+    </header>
+
+    <main class="app__main">
+      <section class="card" id="wordCard">
+        <div class="card__gender" id="genderBadge">—</div>
+        <h2 class="card__word" id="wordDisplay">Klick auf „Neues Wort erfinden“</h2>
+        <p class="card__meta" id="wordMeta">Substantiv (erfunden) · noch nicht im Duden</p>
+        <p class="card__meaning"><strong>Bedeutung:</strong> <span id="wordMeaning">–</span></p>
+        <p class="card__example"><strong>Beispiel:</strong> <span id="wordExample">–</span></p>
+
+        <div class="card__actions">
+          <button id="generateBtn" class="btn btn--primary">🎲 Neues Wort erfinden</button>
+          <button id="saveBtn" class="btn btn--secondary" disabled>⭐ Merken</button>
+          <button id="copyBtn" class="btn btn--secondary" disabled>📋 Kopieren</button>
+        </div>
+      </section>
+
+      <section class="favorites">
+        <div class="favorites__header">
+          <h3>Gemerkte Wörter (<span id="favCount">0</span>)</h3>
+          <button id="clearBtn" class="btn btn--ghost">Alle löschen</button>
+        </div>
+        <ul id="favList" class="favorites__list">
+          <li class="favorites__empty" id="favEmpty">Noch keine Wörter gemerkt.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="app__footer">
+      <p>
+        Alle Wörter werden zufällig aus echten deutschen Wortbausteinen zusammengesetzt.
+        Ähnlichkeiten mit real existierenden Wörtern sind Zufall – Verwendung auf eigene Gefahr, z.&nbsp;B. beim Scrabble.
+      </p>
+    </footer>
+  </div>
+
+  <script src="wordData.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
