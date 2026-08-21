@@ -4,49 +4,71 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wortschmiede – erfundene deutsche Wörter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
-    <header class="app__header">
-      <h1>🔨 Die Wortschmiede</h1>
-      <p class="subtitle">
-        Erfindet deutsche Wörter, die es (noch) nicht gibt – samt Bedeutung, Wortart und Beispielsatz.
+  <div class="page">
+    <header class="masthead">
+      <p class="masthead__kicker">Werkstatt für Wörter, die es nicht gibt</p>
+      <h1 class="masthead__title">Wortschmiede</h1>
+      <p class="masthead__sub">
+        Aus deutschen Lauten und Endungen frisch geschmiedete Wörter — keine Zusammensetzungen,
+        echte Neuschöpfungen mit Bedeutung und Beleg.
       </p>
     </header>
 
-    <main class="app__main">
-      <section class="card" id="wordCard">
-        <div class="card__gender" id="genderBadge">—</div>
-        <h2 class="card__word" id="wordDisplay">Klick auf „Neues Wort erfinden“</h2>
-        <p class="card__meta" id="wordMeta">Substantiv (erfunden) · noch nicht im Duden</p>
-        <p class="card__meaning"><strong>Bedeutung:</strong> <span id="wordMeaning">–</span></p>
-        <p class="card__example"><strong>Beispiel:</strong> <span id="wordExample">–</span></p>
+    <section class="plate" id="plate">
+      <div class="plate__row">
+        <span class="plate__serial" id="serial">000</span>
+        <span class="badge" id="kindBadge" data-kind="—">—</span>
+      </div>
 
-        <div class="card__actions">
-          <button id="generateBtn" class="btn btn--primary">🎲 Neues Wort erfinden</button>
-          <button id="saveBtn" class="btn btn--secondary" disabled>⭐ Merken</button>
-          <button id="copyBtn" class="btn btn--secondary" disabled>📋 Kopieren</button>
-        </div>
-      </section>
+      <div class="word-wrap">
+        <div class="word word--empty" id="wordDisplay">Noch kein Wort geschmiedet.</div>
+      </div>
 
-      <section class="favorites">
-        <div class="favorites__header">
-          <h3>Gemerkte Wörter (<span id="favCount">0</span>)</h3>
-          <button id="clearBtn" class="btn btn--ghost">Alle löschen</button>
-        </div>
-        <ul id="favList" class="favorites__list">
-          <li class="favorites__empty" id="favEmpty">Noch keine Wörter gemerkt.</li>
-        </ul>
-      </section>
-    </main>
+      <p class="plate__meta" id="wordMeta" style="display: none">Substantiv · erfunden · nicht im Duden</p>
 
-    <footer class="app__footer">
-      <p>
-        Alle Wörter werden zufällig aus echten deutschen Wortbausteinen zusammengesetzt.
-        Ähnlichkeiten mit real existierenden Wörtern sind Zufall – Verwendung auf eigene Gefahr, z.&nbsp;B. beim Scrabble.
+      <p class="plate__meaning" id="meaningBlock" style="display: none">
+        <strong>Bedeutung</strong>
+        <span id="wordMeaning"></span>
       </p>
-    </footer>
+
+      <p class="plate__example" id="exampleBlock" style="display: none">
+        <span id="wordExample"></span>
+      </p>
+
+      <div class="plate__actions">
+        <button id="generateBtn" class="btn btn--forge" type="button">Schmieden</button>
+        <button id="saveBtn" class="btn" type="button" disabled>Merken</button>
+        <button id="copyBtn" class="btn" type="button" disabled>Kopieren</button>
+      </div>
+    </section>
+
+    <section class="bench">
+      <div class="bench__head">
+        <div>
+          <h2 class="bench__title">Werkbank <span class="bench__count" id="favCount">0</span></h2>
+          <p class="bench__sub">Deine gemerkten Wörter, griffbereit.</p>
+        </div>
+        <button id="clearBtn" class="btn btn--quiet" type="button">Alles wegräumen</button>
+      </div>
+      <ul class="bench__grid" id="favList">
+        <li class="bench__empty" id="favEmpty">Noch nichts auf der Werkbank.</li>
+      </ul>
+    </section>
+
+    <p class="colophon">
+      Jedes Wort entsteht zufällig aus deutschen Lautbausteinen und echten Endungen — Klang und
+      Bedeutung sind so willkürlich wie bei jedem anderen Wort auch. Verwendung beim Scrabble auf
+      eigene Gefahr.
+    </p>
   </div>
 
   <script src="wordData.js"></script>
