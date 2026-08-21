@@ -1,0 +1,4 @@
+# Netlify erkennt die Endung .webmanifest nicht selbst und liefert sonst
+# application/octet-stream, was Browser als Manifest ablehnen können.
+/manifest.webmanifest
+  Content-Type: application/manifest+json; charset=utf-8

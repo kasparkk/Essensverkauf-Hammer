@@ -1,0 +1,17 @@
+{
+  "name": "Essensverkauf – Strichliste",
+  "short_name": "Essensverkauf",
+  "description": "Strichliste zum Antippen: verkaufte Portionen zählen und Einnahmen berechnen.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f5f2",
+  "theme_color": "#b5502f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,266 @@
+:root {
+  --color-bg: #f6f5f2;
+  --color-surface: #ffffff;
+  --color-text: #2b2620;
+  --color-muted: #6f6a63;
+  --color-primary: #b5502f;
+  --color-primary-dark: #8f3e23;
+  --color-border: #e3ddd3;
+  --color-danger: #a33a3a;
+  font-size: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.app-header {
+  padding: 1.5rem 1rem 1rem;
+  text-align: center;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.brand-text {
+  text-align: left;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+}
+
+.totals-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.total-box {
+  flex: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.9rem;
+  text-align: center;
+}
+
+.total-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  margin-bottom: 0.25rem;
+}
+
+.total-value {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.item-list {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.item-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-template-areas:
+    "info tally remove"
+    "subtotal tally remove";
+  align-items: center;
+  column-gap: 0.75rem;
+}
+
+.item-info {
+  grid-area: info;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-name {
+  font-weight: 600;
+}
+
+.item-price {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+/* Bezeichnung und Preis sind antippbar; die gepunktete Linie zeigt das an. */
+.editable {
+  cursor: pointer;
+  border-bottom: 1px dotted var(--color-muted);
+  align-self: flex-start;
+}
+
+.editable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.field-editor {
+  width: 100%;
+  max-width: 190px;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.field-editor--price {
+  max-width: 120px;
+  font-size: 0.95rem;
+}
+
+.item-subtotal {
+  grid-area: subtotal;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.tally {
+  grid-area: tally;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tally-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #fff;
+  background: var(--color-primary);
+  touch-action: manipulation;
+}
+
+.tally-btn:active {
+  background: var(--color-primary-dark);
+}
+
+.tally-btn.minus {
+  background: var(--color-muted);
+}
+
+.tally-count {
+  min-width: 2ch;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.remove-item {
+  grid-area: remove;
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+
+.add-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.add-item h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+#add-item-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+#add-item-form input {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+#add-item-form button {
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.danger-zone {
+  text-align: center;
+}
+
+#reset-btn {
+  background: transparent;
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#reset-btn:active {
+  background: var(--color-danger);
+  color: #fff;
+}
