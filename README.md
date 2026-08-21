@@ -38,6 +38,18 @@ ohne Server-Abhängigkeit.
 Die App ist für Smartphones/Tablets optimiert (große Tipp-Flächen),
 funktioniert aber ebenso am Desktop.
 
+## Auf dem Handy als App ablegen
+
+Die Seite bringt ein Web-App-Manifest und Homescreen-Icons mit, lässt
+sich also wie eine App ablegen und startet dann ohne Browserleiste:
+
+- **iOS/Safari**: Teilen-Menü → „Zum Home-Bildschirm"
+- **Android/Chrome**: Menü → „App installieren" bzw. „Zum Startbildschirm
+  hinzufügen"
+
+Das Icon ist so angelegt, dass der Burger auch dann vollständig sichtbar
+bleibt, wenn das Betriebssystem es rund oder abgerundet zuschneidet.
+
 ## Dateien
 
 | Datei         | Zweck                                             |
@@ -46,6 +58,9 @@ funktioniert aber ebenso am Desktop.
 | `style.css`   | Layout und Optik (große Buttons, mobil-freundlich) |
 | `app.js`      | Logik: Artikelverwaltung, Zählung, Speicherung     |
 | `logo.svg`    | Burger-Logo (Kopfzeile und Favicon)                |
+| `icon.svg`    | Quelle des App-Icons (Burger auf Hintergrundkachel) |
+| `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Aus `icon.svg` gerenderte Homescreen-Icons |
+| `manifest.webmanifest` | Web-App-Manifest (Name, Farben, Icons)    |
 
 ## Hosting
 
