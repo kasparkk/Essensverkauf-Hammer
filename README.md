@@ -45,6 +45,7 @@ funktioniert aber ebenso am Desktop.
 | `index.html`  | Struktur der Seite                                 |
 | `style.css`   | Layout und Optik (große Buttons, mobil-freundlich) |
 | `app.js`      | Logik: Artikelverwaltung, Zählung, Speicherung     |
+| `logo.svg`    | Burger-Logo (Kopfzeile und Favicon)                |
 
 ## Hosting
 
