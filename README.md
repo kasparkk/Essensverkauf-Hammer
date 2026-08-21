@@ -12,6 +12,11 @@ mit und berechnet laufend die Einnahmen.
 - **Tipp-Zähler (Strichliste)**: Pro Artikel ein großer „+"-Button zum
   Antippen bei jedem Verkauf, sowie ein „−"-Button zum Korrigieren von
   Fehltipps.
+- **Bezeichnung und Preis ändern**: Ein Tipp auf den Namen oder den Preis
+  macht das Feld direkt editierbar. Enter übernimmt, Escape verwirft. Der
+  Zählerstand bleibt dabei erhalten, ein Preis lässt sich also auch
+  mitten im Verkauf noch korrigieren. Preise dürfen mit Komma
+  geschrieben werden („2,50"), Punkt geht ebenso.
 - **Live-Summen**: Verkaufte Portionen gesamt und Gesamteinnahmen
   werden oben permanent angezeigt, Zwischensummen je Artikel unter dem
   jeweiligen Zähler.

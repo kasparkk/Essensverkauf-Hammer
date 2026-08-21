@@ -45,7 +45,7 @@
       <h2>Neuen Artikel anlegen</h2>
       <form id="add-item-form">
         <input type="text" id="item-name" placeholder="Bezeichnung (z. B. Bratwurst)" required maxlength="40" />
-        <input type="number" id="item-price" placeholder="Preis (&euro;)" step="0.01" min="0" required />
+        <input type="text" inputmode="decimal" id="item-price" placeholder="Preis, z. B. 2,50" required />
         <button type="submit">Hinzufügen</button>
       </form>
     </section>

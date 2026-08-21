@@ -126,6 +126,36 @@ main {
   color: var(--color-muted);
 }
 
+/* Bezeichnung und Preis sind antippbar; die gepunktete Linie zeigt das an. */
+.editable {
+  cursor: pointer;
+  border-bottom: 1px dotted var(--color-muted);
+  align-self: flex-start;
+}
+
+.editable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.field-editor {
+  width: 100%;
+  max-width: 190px;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.field-editor--price {
+  max-width: 120px;
+  font-size: 0.95rem;
+}
+
 .item-subtotal {
   grid-area: subtotal;
   font-size: 0.85rem;
