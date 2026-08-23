@@ -12,6 +12,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
 <style>
   :root {
@@ -82,7 +85,7 @@
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Public Sans", system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     font-variant-numeric: tabular-nums;
   }
@@ -107,7 +110,7 @@
 
   .head__title {
     margin: 0;
-    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
     font-weight: 800;
     font-size: 2rem;
     letter-spacing: -0.02em;
@@ -127,7 +130,7 @@
   }
 
   .head__count b {
-    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
     font-size: 2rem;
     display: block;
     letter-spacing: -0.02em;
@@ -142,10 +145,163 @@
 
   .head__count[data-urgent="true"] b { color: var(--over); }
 
+
+  /* ---------- Anruf-Spickzettel ---------- */
+
+  .sheet {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 8px 22px var(--shadow);
+  }
+
+  .sheet__step { margin-bottom: 22px; }
+  .sheet__step:last-child { margin-bottom: 0; }
+
+  .sheet__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 700;
+    color: var(--ink-faint);
+    margin-bottom: 9px;
+  }
+
+  .sheet__num {
+    flex: none;
+    width: 19px; height: 19px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 0.68rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0;
+  }
+
+  .checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+
+  .checklist label {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    font-size: 0.93rem;
+    cursor: pointer;
+    line-height: 1.4;
+  }
+
+  .checklist input { margin-top: 3px; accent-color: var(--accent); flex: none; width: 17px; height: 17px; }
+  .checklist input:checked + span { color: var(--ink-faint); text-decoration: line-through; }
+
+  /* Der Satz, den man vorliest */
+  .opener {
+    position: relative;
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 16px 16px 14px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.12rem;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .opener__copy {
+    margin-top: 10px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    border-radius: 7px;
+    padding: 5px 12px;
+    font: inherit;
+    font-family: system-ui, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .opener__copy:hover { background: var(--accent); color: var(--accent-ink); }
+  .opener__copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .asklist { margin: 0; padding-left: 0; list-style: none; counter-reset: q; display: flex; flex-direction: column; gap: 8px; }
+
+  .asklist li {
+    counter-increment: q;
+    display: flex;
+    gap: 10px;
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .asklist li::before {
+    content: counter(q) ".";
+    flex: none;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 16px;
+  }
+
+  .ifcase {
+    border-left: 3px solid var(--over);
+    background: var(--surface-2);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .ifcase:last-child { margin-bottom: 0; }
+
+  .ifcase__lage {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin-bottom: 5px;
+  }
+
+  .ifcase__sag { font-size: 0.95rem; line-height: 1.45; }
+  .ifcase__sag::before { content: "→ "; color: var(--over); font-weight: 700; }
+
+  .notes { display: flex; flex-direction: column; gap: 9px; }
+
+  .notes__row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 9px; }
+
+  .notes__hintlist {
+    margin: 0 0 10px;
+    padding-left: 18px;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+
+  .notes textarea {
+    width: 100%;
+    min-height: 90px;
+    resize: vertical;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 10px 11px;
+    font: inherit;
+    font-size: 0.93rem;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  .notes textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .notes__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+  .notes__msg { font-size: 0.82rem; color: var(--done); font-weight: 600; }
+
   /* ---------- Reiter ---------- */
 
   .tabs {
-    display: inline-flex;
+    display: flex;
+    flex-wrap: wrap;
     background: var(--surface-2);
     border: 1px solid var(--line);
     border-radius: 10px;
@@ -371,7 +527,7 @@
   .result__text {
     margin: 0;
     padding: 14px 16px 18px;
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: "Newsreader", Georgia, serif;
     font-size: 1.03rem;
     line-height: 1.62;
     white-space: pre-wrap;
@@ -383,7 +539,7 @@
     color: var(--ink);
     border-radius: 4px;
     padding: 0 4px;
-    font-family: system-ui, sans-serif;
+    font-family: "Public Sans", sans-serif;
     font-size: 0.86em;
     font-weight: 600;
   }
@@ -632,6 +788,243 @@
     .task__del { opacity: 1; }
   }
 
+  .task__repeat {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0 7px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .task__amount {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0 7px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chip--amount { color: var(--ink); border-color: var(--ink-faint); }
+
+  /* Summe aller wiederkehrenden Kosten */
+  .abos {
+    display: none;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 15px;
+  }
+
+  .abos.is-on { display: flex; }
+
+  .abos__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 700;
+    color: var(--ink-faint);
+  }
+
+  .abos__sum {
+    font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .abos__year { font-size: 0.85rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .abos__count { font-size: 0.78rem; color: var(--ink-faint); margin-left: auto; }
+
+  .repeatpick {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+  }
+
+  .repeatpick select {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+
+  .repeatpick select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Sichern & Übertragen ---------- */
+
+  .backup {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0 16px;
+  }
+
+  .backup > summary {
+    cursor: pointer;
+    padding: 13px 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .backup > summary::-webkit-details-marker { display: none; }
+  .backup > summary::before { content: "›"; display: inline-block; transition: transform 0.15s ease; }
+  .backup[open] > summary::before { transform: rotate(90deg); }
+  .backup > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .backup > summary::before { transition: none; }
+  }
+
+  .backup__body { padding-bottom: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  .backup__block { display: flex; flex-direction: column; gap: 8px; }
+
+  .backup__title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 700;
+    color: var(--ink-faint);
+  }
+
+  .backup__hint { font-size: 0.8rem; color: var(--ink-faint); line-height: 1.5; }
+
+  .backup__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+  .backup textarea {
+    width: 100%;
+    min-height: 74px;
+    resize: vertical;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 9px 11px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+
+  .backup textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .backup__msg { font-size: 0.82rem; font-weight: 600; }
+  .backup__msg[data-ok="true"] { color: var(--done); }
+  .backup__msg[data-ok="false"] { color: var(--over); }
+
+  /* Der eigene Datei-Knopf: der eingebaute heisst je nach Browser anders
+     und ist meistens englisch — deshalb versteckt und selbst beschriftet. */
+  .backup__file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .backup__filename { font-size: 0.8rem; color: var(--ink-faint); }
+
+  .btn {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 15px;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+  }
+
+  .btn:hover:not(:disabled) { border-color: var(--ink-faint); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn--primary { border-color: transparent; background: var(--accent); color: var(--accent-ink); }
+  .btn--primary:hover:not(:disabled) { border-color: transparent; filter: brightness(1.06); }
+
+  .btn--danger { border-color: var(--over); color: var(--over); }
+  .btn--danger:hover:not(:disabled) { background: var(--over); border-color: var(--over); color: #fff; }
+  .btn--danger:disabled { border-color: var(--line); color: var(--ink-faint); }
+
+  @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+
+  /* ---------- Notizen ---------- */
+
+  .noteadd { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+
+  .noteadd__btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .noteadd__hint { font-size: 0.8rem; color: var(--ink-faint); }
+
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--marker);
+    border-radius: 9px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .note textarea {
+    flex: 1 1 auto;
+    min-height: 62px;
+    resize: vertical;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    padding: 0;
+  }
+
+  .note textarea:focus-visible { outline: none; }
+  .note:focus-within { border-color: var(--accent); }
+
+  .note__del {
+    flex: none;
+    border: none;
+    background: transparent;
+    color: var(--ink-faint);
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 2px 5px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+
+  .note__del:hover { color: var(--over); }
+  .note__del:focus-visible { outline: 2px solid var(--accent); }
+
+  .note__date {
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* ---------- Erledigt ---------- */
 
   .done-wrap { margin-top: 8px; }
@@ -700,7 +1093,7 @@
   }
 
   .empty__big {
-    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
     font-weight: 800;
     font-size: 1.3rem;
     color: var(--ink-soft);
@@ -734,10 +1127,12 @@
 
   <div class="tabs" role="tablist">
     <button class="tab" id="tabFristen" type="button" role="tab" aria-selected="true" aria-controls="paneFristen">Fristen</button>
+    <button class="tab" id="tabTodos" type="button" role="tab" aria-selected="false" aria-controls="paneTodos">To-dos</button>
+    <button class="tab" id="tabAbos" type="button" role="tab" aria-selected="false" aria-controls="paneAbos">Abos</button>
+    <button class="tab" id="tabNotizen" type="button" role="tab" aria-selected="false" aria-controls="paneNotizen">Notizen</button>
     <button class="tab" id="tabTexte" type="button" role="tab" aria-selected="false" aria-controls="paneTexte">Texte</button>
+    <button class="tab" id="tabAnrufe" type="button" role="tab" aria-selected="false" aria-controls="paneAnrufe">Anrufe</button>
   </div>
-
-  <div class="pane is-active" id="paneFristen" role="tabpanel" aria-labelledby="tabFristen">
 
   <section class="add">
     <form class="add__field" id="addForm">
@@ -762,8 +1157,21 @@
       <button class="qbtn" type="button" data-quick="tomorrow" aria-pressed="false">Morgen</button>
       <button class="qbtn" type="button" data-quick="week" aria-pressed="false">In 1 Woche</button>
       <button class="qbtn" type="button" data-quick="none" aria-pressed="false">Ohne</button>
+      <span class="repeatpick">
+        <label for="repeatSel">Wiederholt sich:</label>
+        <select id="repeatSel">
+          <option value="">gar nicht</option>
+          <option value="week">wöchentlich</option>
+          <option value="month">monatlich</option>
+          <option value="year">jährlich</option>
+        </select>
+      </span>
     </div>
   </section>
+
+
+  <div class="pane is-active" id="paneFristen" role="tabpanel" aria-labelledby="tabFristen">
+
 
   <main id="list"></main>
 
@@ -776,6 +1184,28 @@
   </div>
 
   </div><!-- /paneFristen -->
+
+  <div class="pane" id="paneTodos" role="tabpanel" aria-labelledby="tabTodos">
+    <main id="todoList"></main>
+  </div><!-- /paneTodos -->
+
+  <div class="pane" id="paneAbos" role="tabpanel" aria-labelledby="tabAbos">
+    <div class="abos" id="abos">
+      <span class="abos__label">Wiederkehrende Kosten</span>
+      <span class="abos__sum" id="abosMonth">–</span>
+      <span class="abos__year" id="abosYear"></span>
+      <span class="abos__count" id="abosCount"></span>
+    </div>
+    <main id="aboList"></main>
+  </div><!-- /paneAbos -->
+
+  <div class="pane" id="paneNotizen" role="tabpanel" aria-labelledby="tabNotizen">
+    <div class="noteadd">
+      <button class="btn--primary noteadd__btn" id="noteNew" type="button">+ Neue Notiz</button>
+      <span class="noteadd__hint">Zum Nachschlagen: Kundennummern, Öffnungszeiten, was auch immer.</span>
+    </div>
+    <div id="noteList"></div>
+  </div><!-- /paneNotizen -->
 
   <div class="pane" id="paneTexte" role="tabpanel" aria-labelledby="tabTexte">
     <div class="switches">
@@ -818,6 +1248,55 @@
     </section>
   </div><!-- /paneTexte -->
 
+  <div class="pane" id="paneAnrufe" role="tabpanel" aria-labelledby="tabAnrufe">
+    <section class="picker">
+      <input class="search" id="callSearch" type="search" placeholder="Situation suchen — z. B. kündigen, Termin, Störung" aria-label="Anruf-Situation suchen" />
+      <div id="callCats"></div>
+      <div class="fields" id="callFields" style="display:none;"></div>
+    </section>
+    <div id="callSheet"></div>
+  </div><!-- /paneAnrufe -->
+
+  <details class="backup" id="backup">
+    <summary>Sichern &amp; Übertragen</summary>
+    <div class="backup__body">
+
+      <div class="backup__block">
+        <span class="backup__title">Sichern</span>
+        <span class="backup__hint">
+          Speichert alles — Fristen, To-dos, Abos, Notizen und deinen Namen — in einer Datei.
+          Falls das Speichern blockiert wird, kopier einfach den Text darunter.
+        </span>
+        <div class="backup__row">
+          <button class="btn btn--primary" id="expFile" type="button">Als Datei speichern</button>
+          <button class="btn" id="expCopy" type="button">Text kopieren</button>
+          <span class="backup__msg" id="expMsg"></span>
+        </div>
+        <textarea id="expText" readonly aria-label="Gesicherte Daten zum Kopieren"></textarea>
+      </div>
+
+      <div class="backup__block">
+        <span class="backup__title">Übertragen</span>
+        <span class="backup__hint">
+          Datei auswählen oder gesicherten Text einfügen. Du entscheidest danach,
+          ob die Daten dazukommen oder alles ersetzen.
+        </span>
+        <div class="backup__row">
+          <input type="file" id="impFile" accept="application/json,.json" class="backup__file" />
+          <button class="btn" id="impPick" type="button">Datei auswählen</button>
+          <span class="backup__filename" id="impFilename">Keine Datei gewählt</span>
+        </div>
+        <textarea id="impText" placeholder="… oder gesicherten Text hier einfügen" aria-label="Gesicherte Daten einfügen"></textarea>
+        <div class="backup__row">
+          <button class="btn" id="impMerge" type="button" disabled>Dazu­nehmen</button>
+          <button class="btn btn--danger" id="impReplace" type="button" disabled>Alles ersetzen</button>
+          <span class="backup__msg" id="impMsg"></span>
+        </div>
+      </div>
+
+    </div>
+  </details>
+
   <p class="foot">
     Alles bleibt in diesem Browser gespeichert — nichts wird hochgeladen.
     Lege dir den Link auf den Startbildschirm, dann ist alles immer griffbereit.
@@ -829,6 +1308,23 @@
   "use strict";
 
   var STORAGE_KEY = "faellig-aufgaben-v1";
+  var SETTINGS_KEY = "faellig-einstellungen-v1";
+
+  // Der eigene Name wird einmal gemerkt und in Texten wie Anrufen wiederverwendet.
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem(SETTINGS_KEY);
+      var o = raw ? JSON.parse(raw) : null;
+      return (o && typeof o === "object") ? o : {};
+    } catch (e) { return {}; }
+  }
+
+  function saveSettings(o) {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(o)); } catch (e) {}
+  }
+
+  var settings = loadSettings();
+  if (!("ich" in settings)) settings.ich = "Kaspar von Klitzing";
 
   /* ======================= Datum-Werkzeug ======================= */
 
@@ -856,6 +1352,21 @@
   function fromKey(key) {
     var p = key.split("-");
     return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+
+  function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+
+  // Monate/Jahre addieren und dabei den urspruenglichen Monatstag anpeilen:
+  // 31.01. + 1 Monat = 28.02., danach aber wieder 31.03. statt 28.03.
+  function addMonthsAnchored(d, n, anchorDay) {
+    var y = d.getFullYear(), m = d.getMonth() + n;
+    y += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
+    return new Date(y, m, Math.min(anchorDay || d.getDate(), daysInMonth(y, m)));
+  }
+
+  function addYearsAnchored(d, n, anchorDay) {
+    var y = d.getFullYear() + n, m = d.getMonth();
+    return new Date(y, m, Math.min(anchorDay || d.getDate(), daysInMonth(y, m)));
   }
 
   function daysUntil(key) {
@@ -990,9 +1501,110 @@
     return null;
   }
 
+  // Betraege wie "12,99 €", "9 Euro", "€ 7,50". Ein Waehrungszeichen ist Pflicht,
+  // sonst wuerde "15.11." als Geldbetrag durchgehen.
+  function findAmount(text) {
+    var m = text.match(/(\d{1,6}(?:[.,]\d{1,2})?)\s*(?:€|eur\b|euro\b)/i);
+    if (!m) m = text.match(/(?:€|eur\b|euro\b)\s*(\d{1,6}(?:[.,]\d{1,2})?)/i);
+    if (!m) return null;
+    var roh = m[1].replace(".", ",");
+    var teile = roh.split(",");
+    var euro = parseInt(teile[0], 10) || 0;
+    var cent = teile[1] ? parseInt((teile[1] + "0").slice(0, 2), 10) : 0;
+    return { cents: euro * 100 + cent, start: m.index, end: m.index + m[0].length };
+  }
+
+  function formatCents(c) {
+    return (c / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+  }
+
+  // Alles auf Monatskosten umrechnen, damit sich Wochen-, Monats- und
+  // Jahresbetraege ueberhaupt zusammenzaehlen lassen.
+  function centsPerMonth(item) {
+    if (!item.amountCents || !item.repeat) return 0;
+    var n = item.repeat.n || 1;
+    var proMonat;
+    if (item.repeat.unit === "day") proMonat = 30.436875 / n;
+    else if (item.repeat.unit === "week") proMonat = (365.2425 / 7 / 12) / n;
+    else if (item.repeat.unit === "month") proMonat = 1 / n;
+    else proMonat = 1 / (12 * n);
+    return item.amountCents * proMonat;
+  }
+
+  // Erkennt "jeden Monat", "alle 2 Wochen", "jeden Dienstag", "jeden 15." ...
+  // Gibt zusaetzlich zurueck, wodurch die Phrase ersetzt wird, damit die
+  // Datumserkennung daraus noch den ersten Termin ableiten kann.
+  function findRepeat(text) {
+    var lower = text.toLowerCase();
+    var m;
+
+    m = lower.match(wordRe("alle\\s+(\\d{1,2})\\s+(tage?|wochen?|monate?n?|jahre?n?)"));
+    if (m) {
+      var n = Number(m[2]), w = m[3];
+      var unit = w.indexOf("tag") === 0 ? "day" : w.indexOf("woch") === 0 ? "week"
+               : w.indexOf("monat") === 0 ? "month" : "year";
+      return { rep: { unit: unit, n: Math.max(1, n) }, start: m.index + (m[1] || "").length,
+               end: m.index + m[0].length, ersatz: "" };
+    }
+
+    m = lower.match(wordRe("(täglich|taeglich|jeden\\s+tag)"));
+    if (m) return { rep: { unit: "day", n: 1 }, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
+
+    m = lower.match(wordRe("(wöchentlich|woechentlich|jede\\s+woche)"));
+    if (m) return { rep: { unit: "week", n: 1 }, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
+
+    m = lower.match(wordRe("(monatlich|jeden\\s+monat)"));
+    if (m) return { rep: { unit: "month", n: 1 }, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
+
+    m = lower.match(wordRe("(jährlich|jaehrlich|jedes\\s+jahr)"));
+    if (m) return { rep: { unit: "year", n: 1 }, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
+
+    // "jeden Dienstag" -> woechentlich, Wochentag bleibt fuer die Datumserkennung stehen
+    m = lower.match(new RegExp(PRE + "jede[nr]?\\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonnabend|sonntag)" + POST));
+    if (m) {
+      return { rep: { unit: "week", n: 1 }, start: m.index + (m[1] || "").length,
+               end: m.index + m[0].length, ersatz: m[2] };
+    }
+
+    // "jeden 15." -> monatlich am 15.
+    m = lower.match(new RegExp(PRE + "jeden\\s+(\\d{1,2})\\.(?!\\s?\\d)"));
+    if (m) {
+      return { rep: { unit: "month", n: 1, tag: Number(m[2]) }, start: m.index + (m[1] || "").length,
+               end: m.index + m[0].length, ersatz: "" };
+    }
+
+    return null;
+  }
+
+  // Naechster faelliger Termin, verpasste Durchgaenge werden uebersprungen.
+  function advanceRepeat(key, rep) {
+    if (!key || !rep) return key;
+    var d = fromKey(key);
+    var anchor = rep.tag || d.getDate();
+    var heute = today();
+    var guard = 0;
+    do {
+      if (rep.unit === "day") d = addDays(d, rep.n);
+      else if (rep.unit === "week") d = addDays(d, 7 * rep.n);
+      else if (rep.unit === "month") d = addMonthsAnchored(d, rep.n, anchor);
+      else d = addYearsAnchored(d, rep.n, anchor);
+      guard++;
+    } while (d <= heute && guard < 400);
+    return toKey(d);
+  }
+
+  function repeatLabel(rep) {
+    if (!rep) return "";
+    var n = rep.n || 1;
+    if (rep.unit === "day") return n === 1 ? "täglich" : "alle " + n + " Tage";
+    if (rep.unit === "week") return n === 1 ? "wöchentlich" : "alle " + n + " Wochen";
+    if (rep.unit === "month") return n === 1 ? "monatlich" : "alle " + n + " Monate";
+    return n === 1 ? "jährlich" : "alle " + n + " Jahre";
+  }
+
   function parseInput(raw) {
     var text = raw.trim();
-    if (!text) return { text: "", subject: null, dueKey: null, isFixed: false };
+    if (!text) return { text: "", subject: null, dueKey: null, isFixed: false, repeat: null, amountCents: null };
 
     var subject = null;
 
@@ -1016,6 +1628,24 @@
       }
     }
 
+    // Betrag herausloesen, bevor Datum und Wiederholung drankommen.
+    var amountCents = null;
+    var am = findAmount(text);
+    if (am) {
+      amountCents = am.cents;
+      text = (text.slice(0, am.start) + " " + text.slice(am.end)).replace(/\s{2,}/g, " ").trim();
+      text = text.replace(/\s*\b(für|a|je)\b\s*$/i, "").trim();
+    }
+
+    // Wiederholung zuerst herausloesen, damit "jeden Dienstag" nicht als
+    // blosses Datum verschwindet.
+    var repeat = null;
+    var rp = findRepeat(text);
+    if (rp) {
+      repeat = rp.rep;
+      text = (text.slice(0, rp.start) + rp.ersatz + text.slice(rp.end)).replace(/\s{2,}/g, " ").trim();
+    }
+
     var found = findDate(text);
     var dueKey = null;
     if (found) {
@@ -1026,10 +1656,29 @@
       text = text.replace(/^\s*\b(bis|am|zum)\b\s*/i, "").trim();
     }
 
+    // Wiederkehrendes braucht einen Starttermin – sonst gaebe es nichts zu wiederholen.
+    if (repeat && !dueKey) {
+      if (repeat.tag) {
+        var b = today(), cand = new Date(b.getFullYear(), b.getMonth(),
+          Math.min(repeat.tag, daysInMonth(b.getFullYear(), b.getMonth())));
+        if (cand < b) cand = addMonthsAnchored(cand, 1, repeat.tag);
+        dueKey = toKey(cand);
+      } else {
+        dueKey = toKey(today());
+      }
+    }
+
+    // Den urspruenglichen Monatstag festhalten. Ohne diesen Anker wuerde aus
+    // dem 31. nach einem Februar dauerhaft der 28. – der Termin "wandert".
+    if (repeat && dueKey && (repeat.unit === "month" || repeat.unit === "year") && !repeat.tag) {
+      repeat.tag = fromKey(dueKey).getDate();
+    }
+
     var lowerAll = raw.toLowerCase();
     var isFixed = FIXED_WORDS.some(function (w) { return lowerAll.indexOf(w) !== -1; });
 
-    return { text: text, subject: subject, dueKey: dueKey, isFixed: isFixed };
+    return { text: text, subject: subject, dueKey: dueKey, isFixed: isFixed,
+             repeat: repeat, amountCents: amountCents };
   }
 
   /* ======================= Speicher ======================= */
@@ -1082,7 +1731,6 @@
     { id: "tomorrow", title: "Morgen", tone: "" },
     { id: "week", title: "Diese Woche", tone: "" },
     { id: "later", title: "Später", tone: "" },
-    { id: "none", title: "Ohne Termin", tone: "" },
   ];
 
   function renderTask(item) {
@@ -1093,6 +1741,9 @@
     var meta = "";
     if (item.subject) meta += '<span class="task__subject">' + esc(item.subject) + "</span>";
     if (item.isFixed) meta += '<span class="task__badge">Termin</span>';
+    if (item.amountCents) meta += '<span class="task__amount">' + esc(formatCents(item.amountCents)) + "</span>";
+    if (item.repeat) meta += '<span class="task__repeat">↻ ' + esc(repeatLabel(item.repeat)) +
+      (item.doneCount ? " · " + item.doneCount + "×" : "") + "</span>";
     if (due) meta += '<span class="task__due" data-tone="' + tone + '">' + esc(due) + "</span>";
 
     return '<div class="task" data-tone="' + tone + '" data-exam="' + (item.isFixed ? "true" : "false") + '" data-id="' + item.id + '">' +
@@ -1106,9 +1757,18 @@
       "</div>";
   }
 
+  // Ein Abo ist etwas Wiederkehrendes, das Geld kostet. "Muell jeden Dienstag"
+  // wiederholt sich zwar, gehoert aber zu den Fristen.
+  function isAbo(i) { return !!(i.repeat && i.amountCents); }
+
   function render() {
     var open = items.filter(function (i) { return !i.done; });
     var done = items.filter(function (i) { return i.done; });
+    var offeneAbos = open.filter(isAbo);
+    var rest = open.filter(function (i) { return !isAbo(i); });
+    // Mit Datum = Frist, ohne Datum = To-do.
+    var todos = rest.filter(function (i) { return !i.dueKey; });
+    open = rest.filter(function (i) { return !!i.dueKey; });
 
     // Kopfzahl: was heute wirklich ansteht (überfällig + heute).
     var urgent = open.filter(function (i) {
@@ -1123,13 +1783,25 @@
     var now = today();
     todayLabel.textContent = WEEKDAYS_LONG[now.getDay()] + ", " + now.getDate() + ". " + MONTHS_SHORT[now.getMonth()];
 
+    // Summe aller wiederkehrenden Betraege, auf den Monat normiert.
+    var abos = offeneAbos;
+    var proMonat = abos.reduce(function (sum, i) { return sum + centsPerMonth(i); }, 0);
+    var abosEl = document.getElementById("abos");
+    abosEl.classList.toggle("is-on", abos.length > 0);
+    if (abos.length) {
+      document.getElementById("abosMonth").textContent = formatCents(Math.round(proMonat)) + " / Monat";
+      document.getElementById("abosYear").textContent = formatCents(Math.round(proMonat * 12)) + " im Jahr";
+      document.getElementById("abosCount").textContent =
+        abos.length === 1 ? "1 Posten" : abos.length + " Posten";
+    }
+
     if (open.length === 0) {
       listEl.innerHTML =
         '<div class="empty">' +
           '<div class="empty__big">' + (items.length ? "Alles erledigt." : "Noch nichts eingetragen.") + "</div>" +
           '<div class="empty__hint">' +
             (items.length
-              ? "Nichts mehr offen — genieß es."
+              ? "Nichts mit Datum offen. Sachen ohne Termin stehen unter To-dos."
               : "Tipp einfach los, z.&nbsp;B. „Auto: TÜV bis Donnerstag“.<br>Mit „Kategorie: …“ merkt sich die App die Kategorie für später.") +
           "</div>" +
         "</div>";
@@ -1158,6 +1830,29 @@
       listEl.innerHTML = html;
     }
 
+    // To-dos: in der Reihenfolge, in der sie angelegt wurden – so wandert
+    // nichts nach unten, nur weil etwas Neues dazukommt.
+    var todoListEl = document.getElementById("todoList");
+    if (!todos.length) {
+      todoListEl.innerHTML = '<div class="empty"><div class="empty__big">Keine offenen To-dos.</div>' +
+        '<div class="empty__hint">Alles ohne festes Datum landet hier — tipp oben einfach los.</div></div>';
+    } else {
+      var sortedTodos = todos.slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
+      todoListEl.innerHTML = '<div class="group">' +
+        '<div class="group__head">Offen <span class="group__count">' + todos.length + "</span></div>" +
+        sortedTodos.map(renderTask).join("") + "</div>";
+    }
+
+    // Abo-Liste: teuerste zuerst – so sieht man sofort, wo sich Kuendigen lohnt.
+    var aboListEl = document.getElementById("aboList");
+    if (!abos.length) {
+      aboListEl.innerHTML = '<div class="empty"><div class="empty__big">Noch keine Abos.</div>' +
+        '<div class="empty__hint">Tipp oben z.&nbsp;B. „Netflix 12,99 € jeden Monat“ ein.</div></div>';
+    } else {
+      var sortiert = abos.slice().sort(function (a, b) { return centsPerMonth(b) - centsPerMonth(a); });
+      aboListEl.innerHTML = '<div class="group">' + sortiert.map(renderTask).join("") + "</div>";
+    }
+
     doneToggleLabel.textContent = "Erledigt (" + done.length + ")";
     doneWrap.style.display = done.length ? "block" : "none";
     doneList.innerHTML = done
@@ -1178,11 +1873,26 @@
   var addSubmit = document.getElementById("addSubmit");
   var preview = document.getElementById("preview");
   var quickOverride = null; // vom Nutzer per Knopf gesetzter Termin
+  var repeatOverride = null; // per Auswahlfeld gesetzte Wiederholung
+  var repeatSel = document.getElementById("repeatSel");
+
+  // Abo (wiederkehrend + Betrag), sonst Frist (mit Datum) oder To-do (ohne).
+  function zielBereich(p) {
+    if (p.repeat && p.amountCents) return "abos";
+    return p.dueKey ? "fristen" : "todos";
+  }
 
   function currentParse() {
     var p = parseInput(addInput.value);
     if (quickOverride !== undefined && quickOverride !== null) {
       p.dueKey = quickOverride === "none" ? null : quickOverride;
+    }
+    if (repeatOverride) {
+      p.repeat = { unit: repeatOverride, n: 1 };
+      if (!p.dueKey) p.dueKey = toKey(today());
+      if (repeatOverride === "month" || repeatOverride === "year") {
+        p.repeat.tag = fromKey(p.dueKey).getDate();
+      }
     }
     return p;
   }
@@ -1201,6 +1911,13 @@
     if (p.subject) bits += '<span class="chip chip--subject">' + esc(p.subject) + "</span>";
     if (p.isFixed) bits += '<span class="chip chip--exam">Termin</span>';
     bits += '<span class="chip chip--date">' + (p.dueKey ? esc(formatDue(p.dueKey)) : "ohne Termin") + "</span>";
+    if (p.repeat) bits += '<span class="chip chip--subject">↻ ' + esc(repeatLabel(p.repeat)) + "</span>";
+    if (p.amountCents) bits += '<span class="chip chip--amount">' + esc(formatCents(p.amountCents)) + "</span>";
+    // Wo landet der Eintrag? Sichtbar machen, statt raten zu lassen.
+    var ziel = zielBereich(p);
+    if (ziel !== aktiverTab) {
+      bits += '<span class="chip">→ ' + (ziel === "abos" ? "Abos" : ziel === "todos" ? "To-dos" : "Fristen") + "</span>";
+    }
     if (p.text) bits += '<span>' + esc(p.text) + "</span>";
     preview.innerHTML = bits;
   }
@@ -1233,10 +1950,17 @@
 
   function clearQuick() {
     quickOverride = null;
+    repeatOverride = null;
+    repeatSel.value = "";
     document.querySelectorAll("[data-quick]").forEach(function (b) {
       b.setAttribute("aria-pressed", "false");
     });
   }
+
+  repeatSel.addEventListener("change", function () {
+    repeatOverride = repeatSel.value || null;
+    refreshPreview();
+  });
 
   addForm.addEventListener("submit", function (ev) {
     ev.preventDefault();
@@ -1250,14 +1974,18 @@
       subject: p.subject,
       dueKey: p.dueKey,
       isFixed: p.isFixed,
+      repeat: p.repeat || null,
+      amountCents: p.amountCents || null,
       done: false,
       createdAt: Date.now(),
     });
     save(items);
+    var ziel = zielBereich(p);
     addInput.value = "";
     clearQuick();
-    refreshPreview();
     render();
+    if (ziel !== aktiverTab) showTab(ziel);
+    refreshPreview();
     addInput.focus();
   });
 
@@ -1275,8 +2003,15 @@
       writeFor(item);
       return;
     } else if (act === "done") {
-      item.done = true;
-      item.doneAt = Date.now();
+      if (item.repeat && item.dueKey) {
+        // Nicht abhaken, sondern zum naechsten Termin weiterruecken.
+        item.dueKey = advanceRepeat(item.dueKey, item.repeat);
+        item.doneCount = (item.doneCount || 0) + 1;
+        item.lastDoneAt = Date.now();
+      } else {
+        item.done = true;
+        item.doneAt = Date.now();
+      }
     } else if (act === "undo") {
       item.done = false;
       delete item.doneAt;
@@ -1526,6 +2261,101 @@
       }
     },
 
+    // ---------- Studium & Bewerbung ----------
+    {
+      id: "uni-nachreichen", cat: "Studium & Bewerbung", nummerWort: "Bewerbernummer", nummerWortKurz: "Bewerbernummer", title: "Unterlagen nachreichen",
+      betreff: "Nachreichung von Unterlagen – Bewerbung {studiengang}{nummerBetreff}",
+      fields: [
+        { key: "studiengang", gap: "Studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "was", gap: "Unterlage", label: "Was reichst du nach?", ph: "das beglaubigte Abiturzeugnis" },
+        { key: "nummer", label: "Bewerbernummer (optional)", ph: "B-2026-4711", optional: true }
+      ],
+      core: {
+        locker: "ich hatte mich für {studiengang} beworben und reiche hiermit {was} nach.{nummerSatz} Sagen Sie gern Bescheid, falls noch etwas fehlt.",
+        sachlich: "im Rahmen meiner Bewerbung für den Studiengang {studiengang} reiche ich hiermit {was} nach.{nummerSatz} Bitte bestätigen Sie mir kurz den Eingang und teilen Sie mir mit, ob Ihre Unterlagen damit vollständig sind.",
+        bestimmt: "hiermit reiche ich für meine Bewerbung im Studiengang {studiengang} {was} fristgerecht nach.{nummerSatz} Ich bitte um schriftliche Bestätigung des Eingangs sowie um Mitteilung, ob meine Bewerbung damit vollständig vorliegt."
+      }
+    },
+    {
+      id: "uni-stand", cat: "Studium & Bewerbung", nummerWort: "Bewerbernummer", nummerWortKurz: "Bewerbernummer", title: "Nach Bewerbungsstand fragen",
+      betreff: "Sachstand Bewerbung {studiengang}{nummerBetreff}",
+      fields: [
+        { key: "studiengang", gap: "Studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "nummer", label: "Bewerbernummer (optional)", ph: "B-2026-4711", optional: true }
+      ],
+      core: {
+        locker: "ich hatte mich bei Ihnen für {studiengang} beworben und wollte fragen, wie der Stand ist.{nummerSatz}",
+        sachlich: "ich habe mich für den Studiengang {studiengang} beworben.{nummerSatz} Da ich bislang keine Rückmeldung erhalten habe, wollte ich mich nach dem Sachstand erkundigen. Können Sie mir mitteilen, wann mit einer Entscheidung zu rechnen ist?",
+        bestimmt: "ich habe mich fristgerecht für den Studiengang {studiengang} beworben.{nummerSatz} Bislang liegt mir keine Rückmeldung vor. Ich bitte um Auskunft zum Sachstand und um Mitteilung, bis wann die Entscheidung ergeht."
+      }
+    },
+    {
+      id: "uni-voraussetzung", cat: "Studium & Bewerbung", title: "Frage zu Zulassungsvoraussetzungen",
+      betreff: "Frage zur Bewerbung {studiengang}",
+      fields: [
+        { key: "studiengang", gap: "Studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "frage", gap: "Frage", label: "Deine Frage", ph: "ob mein Auslandspraktikum als Vorpraktikum anerkannt wird" }
+      ],
+      core: {
+        locker: "ich interessiere mich für {studiengang} und hätte eine Frage: {frage}?",
+        sachlich: "ich beabsichtige, mich für den Studiengang {studiengang} zu bewerben, und hätte vorab eine Frage: {frage}? Über eine kurze Auskunft wäre ich Ihnen dankbar.",
+        bestimmt: "zur Bewerbung für den Studiengang {studiengang} benötige ich eine verbindliche Auskunft: {frage}? Da hiervon meine Bewerbung abhängt, bitte ich um zeitnahe Rückmeldung."
+      }
+    },
+    {
+      id: "uni-frist", cat: "Studium & Bewerbung", title: "Um Fristverlängerung bitten",
+      betreff: "Bitte um Fristverlängerung – Bewerbung {studiengang}",
+      fields: [
+        { key: "studiengang", gap: "Studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "was", gap: "Unterlage", label: "Was fehlt noch?", ph: "das beglaubigte Zeugnis" },
+        { key: "grund", label: "Warum? (optional)", ph: "die Beglaubigung dauert länger als erwartet", optional: true }
+      ],
+      core: {
+        locker: "mir fehlt für meine Bewerbung zu {studiengang} noch {was}{grundLocker}. Wäre es möglich, das etwas später nachzureichen?",
+        sachlich: "für meine Bewerbung zum Studiengang {studiengang} kann ich {was} nicht fristgerecht einreichen{grundSachlich}. Ich bitte höflich um eine kurze Fristverlängerung und versichere Ihnen, die Unterlage unverzüglich nachzureichen.",
+        bestimmt: "für meine Bewerbung zum Studiengang {studiengang} beantrage ich eine Fristverlängerung für {was}{grundSachlich}. Ich bitte um Mitteilung, bis wann die Nachreichung möglich ist und ob meine Bewerbung bis dahin im Verfahren bleibt."
+      }
+    },
+    {
+      id: "uni-annehmen", cat: "Studium & Bewerbung", nummerWort: "Bewerbernummer", nummerWortKurz: "Bewerbernummer", title: "Studienplatz annehmen",
+      betreff: "Annahme des Studienplatzes {studiengang}{nummerBetreff}",
+      fields: [
+        { key: "studiengang", gap: "Studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "nummer", label: "Bewerbernummer (optional)", ph: "B-2026-4711", optional: true }
+      ],
+      core: {
+        locker: "vielen Dank für die Zulassung zu {studiengang} — ich nehme den Studienplatz gerne an.{nummerSatz} Was muss ich als Nächstes tun?",
+        sachlich: "vielen Dank für die Zulassung zum Studiengang {studiengang}. Ich nehme den Studienplatz hiermit an.{nummerSatz} Bitte teilen Sie mir mit, welche Schritte zur Immatrikulation noch erforderlich sind und welche Fristen dabei gelten.",
+        bestimmt: "hiermit nehme ich den mir angebotenen Studienplatz im Studiengang {studiengang} an.{nummerSatz} Ich bitte um Bestätigung der Annahme sowie um Mitteilung der für die Immatrikulation erforderlichen Unterlagen und Fristen."
+      }
+    },
+    {
+      id: "uni-absagen", cat: "Studium & Bewerbung", nummerWort: "Bewerbernummer", nummerWortKurz: "Bewerbernummer", title: "Studienplatz absagen",
+      betreff: "Verzicht auf den Studienplatz {studiengang}{nummerBetreff}",
+      fields: [
+        { key: "studiengang", gap: "Studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "nummer", label: "Bewerbernummer (optional)", ph: "B-2026-4711", optional: true }
+      ],
+      core: {
+        locker: "danke für die Zulassung zu {studiengang}. Ich habe mich aber anders entschieden und möchte den Platz freigeben.{nummerSatz}",
+        sachlich: "vielen Dank für die Zulassung zum Studiengang {studiengang}. Ich habe mich für einen anderen Weg entschieden und verzichte hiermit auf den Studienplatz, damit er zeitnah nachbesetzt werden kann.{nummerSatz}",
+        bestimmt: "hiermit verzichte ich auf den mir zugewiesenen Studienplatz im Studiengang {studiengang}.{nummerSatz} Ich bitte um kurze Bestätigung des Verzichts."
+      }
+    },
+    {
+      id: "uni-nachrueck", cat: "Studium & Bewerbung", nummerWort: "Bewerbernummer", nummerWortKurz: "Bewerbernummer", title: "Nach Nachrückverfahren fragen",
+      betreff: "Nachrückverfahren {studiengang}{nummerBetreff}",
+      fields: [
+        { key: "studiengang", gap: "Studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "nummer", label: "Bewerbernummer (optional)", ph: "B-2026-4711", optional: true }
+      ],
+      core: {
+        locker: "ich habe für {studiengang} leider keine Zulassung bekommen und wollte fragen, ob es ein Nachrückverfahren gibt.{nummerSatz}",
+        sachlich: "für den Studiengang {studiengang} habe ich einen Ablehnungsbescheid erhalten.{nummerSatz} Ich wollte fragen, ob ein Nachrückverfahren stattfindet, auf welchem Rang ich stehe und bis wann mit einer möglichen Nachrückzulassung zu rechnen ist.",
+        bestimmt: "zu meiner Ablehnung im Studiengang {studiengang}{nummerKurz} bitte ich um Auskunft: Findet ein Nachrückverfahren statt, welchen Rang habe ich, und bis zu welchem Datum werden Nachrückplätze vergeben?"
+      }
+    },
+
     // ---------- Privat ----------
     {
       id: "gefallen", cat: "Privat", title: "Um einen Gefallen bitten",
@@ -1555,7 +2385,7 @@
   ];
   var GAP = "\u0001"; // unsichtbarer Marker: unabhaengig von Leerzeichen-Bereinigung
 
-  var msg = { channel: "whatsapp", tone: "sachlich", tplId: null, values: {}, context: null };
+  var msg = { channel: "whatsapp", tone: "sachlich", tplId: null, values: { ich: settings.ich || "" }, context: null };
 
   var catsEl = document.getElementById("cats");
   var msgFieldsEl = document.getElementById("fields");
@@ -1626,9 +2456,13 @@
     d.wannSachlich = wann ? " am " + wann : "";
 
     var nummer = val("nummer");
-    d.nummerSatz = nummer ? " Bestell-/Kundennummer: " + nummer + "." : "";
-    d.nummerKurz = nummer ? " (Kundennummer " + nummer + ")" : "";
-    d.nummerBetreff = nummer ? " – Kundennummer " + nummer : "";
+    // Wie die Nummer heisst, haengt von der Situation ab: Kundennummer beim
+    // Haendler, Bewerbernummer bei der Uni. Vorlagen koennen das ueberschreiben.
+    var nWort = tpl.nummerWort || "Bestell-/Kundennummer";
+    var nKurz = tpl.nummerWortKurz || "Kundennummer";
+    d.nummerSatz = nummer ? " " + nWort + ": " + nummer + "." : "";
+    d.nummerKurz = nummer ? " (" + nKurz + " " + nummer + ")" : "";
+    d.nummerBetreff = nummer ? " – " + nKurz + " " + nummer : "";
 
     var vertretung = val("vertretung");
     d.vertretungSatz = vertretung ? " " + vertretung + "." : "";
@@ -1779,6 +2613,7 @@
   msgFieldsEl.addEventListener("input", function (ev) {
     var f = ev.target.closest("[data-field]"); if (!f) return;
     msg.values[f.dataset.field] = f.value;
+    if (f.dataset.field === "ich") { settings.ich = f.value; saveSettings(settings); }
     renderResult();
   });
 
@@ -1805,21 +2640,39 @@
 
   /* ======================= Reiter ======================= */
 
-  var tabFristen = document.getElementById("tabFristen");
-  var tabTexte = document.getElementById("tabTexte");
-  var paneFristen = document.getElementById("paneFristen");
-  var paneTexte = document.getElementById("paneTexte");
+  var TABS = {
+    fristen: [document.getElementById("tabFristen"), document.getElementById("paneFristen")],
+    todos:   [document.getElementById("tabTodos"),   document.getElementById("paneTodos")],
+    abos:    [document.getElementById("tabAbos"),    document.getElementById("paneAbos")],
+    notizen: [document.getElementById("tabNotizen"), document.getElementById("paneNotizen")],
+    texte:   [document.getElementById("tabTexte"),   document.getElementById("paneTexte")],
+    anrufe:  [document.getElementById("tabAnrufe"),  document.getElementById("paneAnrufe")]
+  };
+
+  var addPanel = document.querySelector(".add");
+  var aktiverTab = "fristen";
 
   function showTab(which) {
-    var texte = which === "texte";
-    tabFristen.setAttribute("aria-selected", texte ? "false" : "true");
-    tabTexte.setAttribute("aria-selected", texte ? "true" : "false");
-    paneFristen.classList.toggle("is-active", !texte);
-    paneTexte.classList.toggle("is-active", texte);
+    aktiverTab = which;
+    Object.keys(TABS).forEach(function (k) {
+      var on = k === which;
+      TABS[k][0].setAttribute("aria-selected", on ? "true" : "false");
+      TABS[k][1].classList.toggle("is-active", on);
+    });
+    // Eintragen ergibt nur dort Sinn, wo auch Eintraege liegen.
+    var zeigen = which === "fristen" || which === "abos" || which === "todos";
+    addPanel.style.display = zeigen ? "" : "none";
+    if (zeigen) {
+      addInput.placeholder = which === "abos" ? "z. B. Netflix 12,99 € jeden Monat"
+        : which === "todos" ? "z. B. Fahrrad reparieren"
+        : "z. B. Vermieter: Nebenkosten bis Freitag";
+      refreshPreview();
+    }
   }
 
-  tabFristen.addEventListener("click", function () { showTab("fristen"); });
-  tabTexte.addEventListener("click", function () { showTab("texte"); });
+  Object.keys(TABS).forEach(function (k) {
+    TABS[k][0].addEventListener("click", function () { showTab(k); });
+  });
 
   // Von einer Aufgabe zum Textbaukasten springen
   function writeFor(item) {
@@ -1835,6 +2688,912 @@
   }
 
   renderMsgAll();
+
+
+  /* ======================= Anruf-Spickzettel ======================= */
+
+  var CALLS = [
+    {
+      id: "arzt-termin", cat: "Termin machen", title: "Arzttermin vereinbaren",
+      fields: [
+        { key: "grund", label: "Worum geht es?", ph: "eine Kontrolluntersuchung" },
+        { key: "wann", label: "Wann passt dir?", ph: "vormittags, am besten Dienstag" }
+      ],
+      bereit: ["Versichertenkarte", "Kalender offen", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich hätte gerne einen Termin für {grund}.",
+      fragen: [
+        "Wann wäre der nächste freie Termin?",
+        "Geht auch {wann}?",
+        "Wie lange dauert der Termin ungefähr?",
+        "Muss ich etwas mitbringen oder vorher beachten?"
+      ],
+      wenn: [
+        { lage: "„Da haben wir erst in drei Monaten was frei.“",
+          sag: "Können Sie mich auf die Warteliste setzen, falls jemand absagt? Ich kann auch kurzfristig kommen." },
+        { lage: "„Sind Sie schon Patient bei uns?“",
+          sag: "Nein, ich wäre neu — nehmen Sie noch Patienten auf?" }
+      ],
+      notieren: ["Termin (Datum + Uhrzeit)", "Was mitbringen", "Name der Person am Telefon"]
+    },
+    {
+      id: "werkstatt", cat: "Termin machen", title: "Werkstatt / Handwerker",
+      fields: [
+        { key: "was", label: "Was ist zu tun?", ph: "Reifenwechsel" },
+        { key: "objekt", label: "Worum geht's genau?", ph: "VW Golf, Baujahr 2016" }
+      ],
+      bereit: ["Angaben zum Gerät/Fahrzeug", "Kalender offen", "Stift und Zettel"],
+      einstieg: "Guten Tag, {ich} hier. Ich bräuchte einen Termin für {was}.",
+      fragen: [
+        "Wann hätten Sie den nächsten freien Termin?",
+        "Was kostet das ungefähr?",
+        "Wie lange dauert es — kann ich warten oder muss ich es dalassen?",
+        "Brauchen Sie vorab noch Angaben von mir?"
+      ],
+      wenn: [
+        { lage: "„Das können wir am Telefon nicht sagen.“",
+          sag: "Ich verstehe. Können Sie mir eine grobe Spanne nennen, damit ich weiß, woran ich bin?" },
+        { lage: "„Wir melden uns zurück.“",
+          sag: "Gerne — bis wann darf ich mit der Rückmeldung rechnen?" }
+      ],
+      notieren: ["Termin", "Geschätzte Kosten", "Was ich mitbringen muss"]
+    },
+    {
+      id: "amt-termin", cat: "Termin machen", title: "Termin beim Amt",
+      fields: [
+        { key: "anliegen", label: "Dein Anliegen", ph: "eine Ummeldung" },
+        { key: "nummer", label: "Aktenzeichen (falls vorhanden)", ph: "AZ 123/45", optional: true }
+      ],
+      bereit: ["Ausweis", "Aktenzeichen oder Bescheid", "Kalender", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich bräuchte einen Termin wegen {anliegen}.",
+      fragen: [
+        "Bin ich bei Ihnen richtig, oder muss ich woanders anrufen?",
+        "Welche Unterlagen muss ich mitbringen?",
+        "Wann ist der nächste freie Termin?",
+        "Geht das auch schriftlich oder online, ohne persönlich zu kommen?"
+      ],
+      wenn: [
+        { lage: "„Dafür sind wir nicht zuständig.“",
+          sag: "Verstehe. Können Sie mir sagen, welche Stelle zuständig ist — am besten mit Durchwahl?" },
+        { lage: "„Sie müssen online einen Termin buchen.“",
+          sag: "Ich habe dort keinen freien Termin gefunden. Was raten Sie mir?" }
+      ],
+      notieren: ["Termin", "Benötigte Unterlagen", "Zuständige Stelle + Durchwahl"]
+    },
+
+    {
+      id: "stand", cat: "Nachhaken", title: "Stand der Bearbeitung erfragen",
+      fields: [
+        { key: "vorgang", label: "Um welchen Vorgang geht es?", ph: "meinen Antrag vom 3. März" },
+        { key: "nummer", label: "Aktenzeichen / Kundennummer", ph: "12345", optional: true }
+      ],
+      bereit: ["Aktenzeichen oder Kundennummer", "Datum der Einreichung", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich wollte mich nach dem Stand von {vorgang} erkundigen.",
+      fragen: [
+        "Ist der Vorgang bei Ihnen eingegangen?",
+        "Wie ist der aktuelle Stand?",
+        "Bis wann kann ich mit einer Entscheidung rechnen?",
+        "Fehlt Ihnen noch etwas von mir?"
+      ],
+      wenn: [
+        { lage: "„Das dauert noch.“",
+          sag: "Können Sie mir einen ungefähren Zeitraum nennen? Zwei Wochen oder eher zwei Monate?" },
+        { lage: "„Da kann ich Ihnen nichts sagen.“",
+          sag: "Wer könnte mir das denn sagen? Können Sie mich verbinden oder mir die Durchwahl geben?" }
+      ],
+      notieren: ["Name der Person", "Genannter Zeitraum", "Ob noch etwas fehlt"]
+    },
+    {
+      id: "vertroestet", cat: "Nachhaken", title: "Schon wieder vertröstet worden",
+      fields: [
+        { key: "vorgang", label: "Worum geht es?", ph: "meine Rückerstattung" },
+        { key: "seit", label: "Seit wann warte ich?", ph: "seit sechs Wochen" }
+      ],
+      bereit: ["Bisherige Kontakte: Datum + Name", "Aktenzeichen", "Stift und Zettel"],
+      einstieg: "Guten Tag, {ich} hier. Es geht um {vorgang} — ich warte {seit} und habe schon mehrfach nachgefragt.",
+      fragen: [
+        "Was ist der Grund für die Verzögerung?",
+        "Wer bearbeitet den Vorgang aktuell?",
+        "Bis wann wird das erledigt — nennen Sie mir bitte ein konkretes Datum?",
+        "Bekomme ich das schriftlich bestätigt?"
+      ],
+      wenn: [
+        { lage: "„Das kann ich nicht versprechen.“",
+          sag: "Ich brauche kein Versprechen, sondern eine realistische Einschätzung. Welches Datum halten Sie für machbar?" },
+        { lage: "„Da müssen Sie sich gedulden.“",
+          sag: "Das habe ich {seit} getan. Wenn es bis [Datum] nicht erledigt ist, wende ich mich an eine übergeordnete Stelle. Ist das so verstanden?" },
+        { lage: "Man will dich abwimmeln.",
+          sag: "Ich möchte bitte Ihren Namen für meine Notizen. Und mit wem kann ich sprechen, wenn Sie nicht weiterhelfen können?" }
+      ],
+      notieren: ["Name der Person (unbedingt!)", "Uhrzeit des Anrufs", "Zugesagtes Datum", "Ob schriftliche Bestätigung kommt"]
+    },
+
+    {
+      id: "reklamation", cat: "Problem melden", title: "Etwas reklamieren",
+      fields: [
+        { key: "problem", label: "Was ist das Problem?", ph: "das Gerät ist nach zwei Wochen kaputt" },
+        { key: "nummer", label: "Bestell- / Kundennummer", ph: "12345", optional: true }
+      ],
+      bereit: ["Rechnung oder Bestellbestätigung", "Kaufdatum", "Bestellnummer", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich habe ein Problem mit einer Bestellung bei Ihnen: {problem}.",
+      fragen: [
+        "Wie gehen wir jetzt vor?",
+        "Bekomme ich Ersatz oder das Geld zurück?",
+        "Wer trägt die Rücksendekosten?",
+        "Bis wann ist das erledigt?"
+      ],
+      wenn: [
+        { lage: "„Da müssen Sie sich an den Hersteller wenden.“",
+          sag: "Mein Vertragspartner sind Sie, nicht der Hersteller. Ich möchte die Sache mit Ihnen klären." },
+        { lage: "„Die Garantie ist abgelaufen.“",
+          sag: "Es geht mir nicht um Garantie, sondern um die gesetzliche Gewährleistung. Die gilt zwei Jahre." },
+        { lage: "„Schicken Sie uns eine E-Mail.“",
+          sag: "Mache ich — an welche Adresse genau, und mit welchem Betreff, damit es gleich richtig landet?" }
+      ],
+      notieren: ["Name der Person", "Zugesagte Lösung", "Frist", "Vorgangsnummer"]
+    },
+    {
+      id: "rechnung", cat: "Problem melden", title: "Rechnung stimmt nicht",
+      fields: [
+        { key: "problem", label: "Was stimmt nicht?", ph: "mir wurden 89 Euro zu viel berechnet" },
+        { key: "nummer", label: "Rechnungsnummer", ph: "R-2024-88" }
+      ],
+      bereit: ["Die Rechnung selbst", "Vertrag oder Bestellung zum Vergleich", "Kontoauszug", "Stift und Zettel"],
+      einstieg: "Guten Tag, {ich} hier. Es geht um die Rechnung {nummer} — da stimmt aus meiner Sicht etwas nicht: {problem}.",
+      fragen: [
+        "Können Sie das bitte prüfen?",
+        "Wie kommt der Betrag zustande?",
+        "Bekomme ich eine korrigierte Rechnung?",
+        "Was passiert in der Zwischenzeit mit der Zahlungsfrist?"
+      ],
+      wenn: [
+        { lage: "„Die Rechnung ist korrekt.“",
+          sag: "Dann erklären Sie mir bitte Posten für Posten, wie der Betrag zustande kommt." },
+        { lage: "„Sie müssen trotzdem erst mal zahlen.“",
+          sag: "Den unstrittigen Teil zahle ich. Den strittigen Betrag behalte ich bis zur Klärung ein." }
+      ],
+      notieren: ["Name der Person", "Ergebnis der Prüfung", "Neue Zahlungsfrist", "Ob korrigierte Rechnung kommt"]
+    },
+    {
+      id: "stoerung", cat: "Problem melden", title: "Störung oder Defekt melden",
+      fields: [
+        { key: "problem", label: "Was funktioniert nicht?", ph: "das Internet fällt ständig aus" },
+        { key: "seit", label: "Seit wann?", ph: "seit Montag" }
+      ],
+      bereit: ["Kunden- oder Vertragsnummer", "Wann es angefangen hat", "Was du schon probiert hast", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich habe eine Störung zu melden: {problem}, {seit}.",
+      fragen: [
+        "Ist das eine bekannte Störung bei Ihnen?",
+        "Was kann ich selbst prüfen?",
+        "Wann wird das behoben?",
+        "Bekomme ich eine Störungsnummer?"
+      ],
+      wenn: [
+        { lage: "„Haben Sie den Router schon neu gestartet?“",
+          sag: "Ja, mehrfach. Auch [was du sonst probiert hast]. Das Problem besteht weiter." },
+        { lage: "„Da müssen wir einen Techniker schicken.“",
+          sag: "In Ordnung. Wann kommt der, und was kostet mich das?" }
+      ],
+      notieren: ["Störungsnummer", "Name der Person", "Zugesagter Zeitpunkt", "Ob Techniker kommt + Kosten"]
+    },
+
+    {
+      id: "kuendigen", cat: "Vertrag", title: "Vertrag kündigen",
+      fields: [
+        { key: "vertrag", label: "Welcher Vertrag?", ph: "mein Handyvertrag" },
+        { key: "nummer", label: "Kundennummer", ph: "998877", optional: true }
+      ],
+      bereit: ["Kundennummer", "Vertragsbeginn", "Kündigungsfrist (falls bekannt)", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich möchte {vertrag} kündigen.",
+      fragen: [
+        "Zu welchem Datum endet der Vertrag?",
+        "Reicht die telefonische Kündigung, oder muss ich schriftlich kündigen?",
+        "Bekomme ich eine schriftliche Bestätigung?",
+        "Muss ich noch etwas zurückschicken?"
+      ],
+      wenn: [
+        { lage: "Man macht dir ein Halteangebot.",
+          sag: "Danke, aber ich möchte trotzdem kündigen. Bitte notieren Sie die Kündigung." },
+        { lage: "„Das geht nur schriftlich.“",
+          sag: "Verstanden. An welche Adresse genau, und gilt das Datum meines Anrufs heute als Eingang?" },
+        { lage: "Man will dich weiterverbinden.",
+          sag: "Bevor Sie mich verbinden: Bitte notieren Sie, dass ich heute, am [Datum], gekündigt habe." }
+      ],
+      notieren: ["Vertragsende (Datum)", "Name der Person", "Ob Bestätigung kommt", "Was zurückgeschickt werden muss"]
+    },
+    {
+      id: "tarif", cat: "Vertrag", title: "Tarif oder Vertrag ändern",
+      fields: [
+        { key: "wunsch", label: "Was möchtest du ändern?", ph: "in einen günstigeren Tarif wechseln" },
+        { key: "nummer", label: "Kundennummer", ph: "998877", optional: true }
+      ],
+      bereit: ["Kundennummer", "Aktueller Tarif und Preis", "Angebote der Konkurrenz", "Stift und Zettel"],
+      einstieg: "Guten Tag, {ich} hier. Ich möchte {wunsch}.",
+      fragen: [
+        "Welche Tarife wären für mich möglich?",
+        "Was kostet das genau im Monat?",
+        "Ab wann gilt die Änderung?",
+        "Verlängert sich dadurch meine Laufzeit?"
+      ],
+      wenn: [
+        { lage: "„Das geht erst zum Vertragsende.“",
+          sag: "Was wäre denn möglich, wenn ich stattdessen kündige und zur Konkurrenz wechsle?" },
+        { lage: "Man nennt dir nur den Aktionspreis.",
+          sag: "Und was zahle ich nach Ablauf der Aktion?" }
+      ],
+      notieren: ["Neuer Tarif + Preis", "Ab wann gültig", "Neue Laufzeit", "Name der Person"]
+    },
+
+    {
+      id: "krank", cat: "Arbeit", title: "Krankmelden",
+      fields: [
+        { key: "dauer", label: "Voraussichtlich wie lange?", ph: "heute und morgen" }
+      ],
+      bereit: ["Nummer der/des Vorgesetzten", "Überblick, was heute anliegt", "Stift und Zettel"],
+      einstieg: "Guten Morgen, {ich} hier. Ich bin krank und kann heute leider nicht kommen.",
+      fragen: [
+        "Voraussichtlich falle ich {dauer} aus — ist das so in Ordnung?",
+        "Ab wann brauchen Sie die Krankmeldung vom Arzt?",
+        "Soll ich jemandem etwas übergeben?"
+      ],
+      wenn: [
+        { lage: "„Können Sie nicht doch kommen?“",
+          sag: "Nein, das geht nicht. Ich melde mich, sobald es mir besser geht." },
+        { lage: "Man fragt nach Details zur Krankheit.",
+          sag: "Das möchte ich nicht besprechen — ich bin arbeitsunfähig, das genügt." }
+      ],
+      notieren: ["Mit wem gesprochen", "Uhrzeit", "Ab wann Attest nötig"]
+    },
+    {
+      id: "uni-sekretariat", cat: "Studium", title: "Studierendensekretariat: Bewerbung",
+      fields: [
+        { key: "studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "nummer", label: "Bewerbernummer (optional)", ph: "B-2026-4711", optional: true }
+      ],
+      bereit: ["Bewerbernummer", "Bewerbungsportal geöffnet", "Abiturnote und Abschlussdatum", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich habe mich für {studiengang} beworben und hätte eine Frage dazu.",
+      fragen: [
+        "Ist meine Bewerbung vollständig bei Ihnen eingegangen?",
+        "Fehlen noch Unterlagen von mir?",
+        "Bis wann bekomme ich Bescheid?",
+        "Wie erfahre ich davon — per Post, E-Mail oder im Portal?"
+      ],
+      wenn: [
+        { lage: "„Das sehen Sie alles im Bewerbungsportal.“",
+          sag: "Da steht bei mir nur „in Bearbeitung“. Können Sie mir sagen, was das konkret bedeutet?" },
+        { lage: "„Dafür ist die Zulassungsstelle zuständig.“",
+          sag: "Können Sie mich verbinden oder mir die Durchwahl geben?" },
+        { lage: "Man kann dir zur Anerkennung nichts sagen.",
+          sag: "Von wem bekomme ich denn eine verbindliche Auskunft? Ich möchte mich nicht auf eine Vermutung verlassen." }
+      ],
+      notieren: ["Name der Person", "Ob Unterlagen fehlen", "Zugesagtes Datum für den Bescheid", "Auf welchem Weg der Bescheid kommt"]
+    },
+    {
+      id: "uni-voraussetzung-call", cat: "Studium", title: "Zulassungsvoraussetzungen klären",
+      fields: [
+        { key: "studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "frage", label: "Was willst du wissen?", ph: "ob mein Praktikum als Vorpraktikum zählt" }
+      ],
+      bereit: ["Studiengangsbeschreibung", "Deine Nachweise (Zeugnisse, Praktika)", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich möchte mich für {studiengang} bewerben und habe eine Frage zu den Voraussetzungen: {frage}.",
+      fragen: [
+        "Wie ist das in meinem Fall zu bewerten?",
+        "Wo steht das nachlesbar — gibt es eine Ordnung oder ein Merkblatt?",
+        "Muss ich dafür etwas Bestimmtes einreichen?",
+        "Bekomme ich diese Auskunft auch schriftlich?"
+      ],
+      wenn: [
+        { lage: "„Das entscheidet der Prüfungsausschuss.“",
+          sag: "Verstehe. Wie stelle ich dort einen Antrag, und wie lange dauert das üblicherweise?" },
+        { lage: "„Das kann ich Ihnen nicht verbindlich sagen.“",
+          sag: "Können Sie mir das dann bitte per E-Mail bestätigen? Ich brauche es für meine Bewerbung." }
+      ],
+      notieren: ["Name der Person", "Die Antwort möglichst wörtlich", "Wo es nachlesbar ist", "Ob schriftliche Bestätigung kommt"]
+    },
+    {
+      id: "uni-nachrueck-call", cat: "Studium", title: "Nachrückverfahren erfragen",
+      fields: [
+        { key: "studiengang", label: "Studiengang", ph: "B.Sc. Psychologie" },
+        { key: "nummer", label: "Bewerbernummer (optional)", ph: "B-2026-4711", optional: true }
+      ],
+      bereit: ["Ablehnungsbescheid", "Bewerbernummer", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich habe für {studiengang} eine Absage bekommen und wollte nach dem Nachrückverfahren fragen.",
+      fragen: [
+        "Findet überhaupt ein Nachrückverfahren statt?",
+        "Auf welchem Rang stehe ich?",
+        "Bis wann werden Nachrückplätze vergeben?",
+        "Muss ich dafür etwas tun oder werde ich automatisch berücksichtigt?"
+      ],
+      wenn: [
+        { lage: "„Das können wir noch nicht sagen.“",
+          sag: "Ab wann steht das fest? Dann melde ich mich zu dem Zeitpunkt noch einmal." },
+        { lage: "„Ihr Rang ist sehr weit hinten.“",
+          sag: "Wie viele sind in den letzten Jahren üblicherweise nachgerückt? Dann kann ich einschätzen, ob ich warten soll." }
+      ],
+      notieren: ["Name der Person", "Rang", "Letzter Tag des Nachrückens", "Ob ich selbst aktiv werden muss"]
+    },
+    {
+      id: "bewerbung", cat: "Arbeit", title: "Nach Bewerbung nachfragen",
+      fields: [
+        { key: "stelle", label: "Auf welche Stelle?", ph: "Lagermitarbeiter" },
+        { key: "wann", label: "Beworben am", ph: "12. März", optional: true }
+      ],
+      bereit: ["Deine Bewerbung zum Nachschlagen", "Stellenbezeichnung", "Kalender", "Stift und Zettel"],
+      einstieg: "Guten Tag, mein Name ist {ich}. Ich habe mich bei Ihnen als {stelle} beworben und wollte fragen, wie der Stand ist.",
+      fragen: [
+        "Ist meine Bewerbung angekommen?",
+        "Wie ist der aktuelle Stand des Verfahrens?",
+        "Bis wann rechnen Sie mit einer Entscheidung?",
+        "Kann ich noch etwas nachreichen?"
+      ],
+      wenn: [
+        { lage: "„Da ist die Personalabteilung zuständig.“",
+          sag: "Können Sie mich verbinden oder mir die Durchwahl geben?" },
+        { lage: "„Wir melden uns.“",
+          sag: "Gerne — bis wann ungefähr? Dann warte ich bis dahin ab." }
+      ],
+      notieren: ["Name der Person", "Genannter Zeitpunkt", "Ob noch etwas fehlt"]
+    }
+  ];
+
+  var callState = { id: null, values: { ich: settings.ich || "" } };
+
+  var callCatsEl = document.getElementById("callCats");
+  var callFieldsEl = document.getElementById("callFields");
+  var callSearchEl = document.getElementById("callSearch");
+  var callSheetEl = document.getElementById("callSheet");
+
+  function callById(id) { return CALLS.find(function (c) { return c.id === id; }); }
+
+  function callVal(key) { return (callState.values[key] || "").trim(); }
+
+  // Platzhalter fuellen; Fehlendes bleibt als sichtbare Luecke stehen.
+  function callFill(text, tpl) {
+    return text.replace(/\{(\w+)\}/g, function (m, key) {
+      var v = callVal(key);
+      if (v) return v;
+      if (key === "ich") return GAP + "dein Name" + GAP;
+      var f = (tpl.fields || []).find(function (x) { return x.key === key; });
+      return GAP + ((f && (f.gap || f.label)) || key) + GAP;
+    });
+  }
+
+  function renderCallCats() {
+    var q = callSearchEl.value.trim().toLowerCase();
+    var list = CALLS.filter(function (c) {
+      if (!q) return true;
+      return (c.title + " " + c.cat).toLowerCase().indexOf(q) !== -1;
+    });
+    if (!list.length) {
+      callCatsEl.innerHTML = '<div class="noresult">Nichts gefunden. Beschreib mir den Anruf im Chat — dann schreibe ich dir den Spickzettel direkt.</div>';
+      return;
+    }
+    var byCat = {}, order = [];
+    list.forEach(function (c) {
+      if (!byCat[c.cat]) { byCat[c.cat] = []; order.push(c.cat); }
+      byCat[c.cat].push(c);
+    });
+    callCatsEl.innerHTML = order.map(function (cat) {
+      return '<div class="cat"><div class="cat__name">' + esc(cat) + "</div>" +
+        '<div class="cat__items">' + byCat[cat].map(function (c) {
+          return '<button class="tpl" type="button" data-call="' + c.id + '" aria-pressed="' +
+            (callState.id === c.id ? "true" : "false") + '">' + esc(c.title) + "</button>";
+        }).join("") + "</div></div>";
+    }).join("");
+  }
+
+  function renderCallFields() {
+    var tpl = callById(callState.id);
+    if (!tpl) { callFieldsEl.style.display = "none"; return; }
+    var all = tpl.fields.concat([{ key: "ich", label: "Dein Name (optional)", ph: "Kaspar" }]);
+    callFieldsEl.style.display = "grid";
+    callFieldsEl.innerHTML = all.map(function (f) {
+      return '<label class="field"><span class="field__label">' + esc(f.label) + "</span>" +
+        '<input class="field__input" type="text" data-callfield="' + f.key + '" placeholder="' +
+        esc(f.ph) + '" value="' + esc(callState.values[f.key] || "") + '" /></label>';
+    }).join("");
+  }
+
+  function renderCallSheet() {
+    var tpl = callById(callState.id);
+    if (!tpl) {
+      callSheetEl.innerHTML = '<div class="sheet"><div class="result__empty">' +
+        'Wähl oben aus, worum es beim Anruf geht — dann steht hier, was du sagst und fragst.' +
+        "</div></div>";
+      return;
+    }
+
+    var opener = callFill(tpl.einstieg, tpl);
+
+    var html = '<div class="sheet">';
+
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">1</span>Vorher bereitlegen</div>' +
+      '<ul class="checklist">' + tpl.bereit.map(function (b, i) {
+        return '<li><label><input type="checkbox" data-prep="' + i + '"><span>' + esc(b) + "</span></label></li>";
+      }).join("") + "</ul></div>";
+
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">2</span>So fängst du an</div>' +
+      '<div class="opener">' + renderGaps(opener) +
+      '<br><button class="opener__copy" type="button" id="openerCopy">Satz kopieren</button></div></div>';
+
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">3</span>Das musst du fragen</div>' +
+      '<ol class="asklist">' + tpl.fragen.map(function (f) {
+        return "<li><span>" + renderGaps(callFill(f, tpl)) + "</span></li>";
+      }).join("") + "</ol></div>";
+
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">4</span>Falls es schwierig wird</div>' +
+      tpl.wenn.map(function (w) {
+        return '<div class="ifcase"><div class="ifcase__lage">' + esc(w.lage) + "</div>" +
+          '<div class="ifcase__sag">' + renderGaps(callFill(w.sag, tpl)) + "</div></div>";
+      }).join("") + "</div>";
+
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">5</span>Mitschreiben</div>' +
+      '<ul class="notes__hintlist">' + tpl.notieren.map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" +
+      '<div class="notes">' +
+        '<textarea id="callNotes" placeholder="Notizen während des Gesprächs …"></textarea>' +
+        '<div class="notes__row">' +
+          '<label class="field"><span class="field__label">Zugesagt bis</span>' +
+          '<input class="field__input" id="callDue" type="text" placeholder="z. B. Freitag oder 12.5."></label>' +
+          '<label class="field"><span class="field__label">Was soll passieren?</span>' +
+          '<input class="field__input" id="callTodo" type="text" placeholder="z. B. Rückruf abwarten"></label>' +
+        "</div>" +
+        '<div class="notes__actions">' +
+          '<button class="copybtn" type="button" id="callToTask">Als Frist merken</button>' +
+          '<button class="btn qbtn" type="button" id="callCopyNotes">Notizen kopieren</button>' +
+          '<span class="notes__msg" id="callMsg"></span>' +
+        "</div>" +
+      "</div></div>";
+
+    html += "</div>";
+    callSheetEl.innerHTML = html;
+
+    document.getElementById("openerCopy").addEventListener("click", function () {
+      var btn = this, txt = plainText(opener);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () {
+          btn.textContent = "Kopiert"; setTimeout(function () { btn.textContent = "Satz kopieren"; }, 1300);
+        }, function () {});
+      }
+    });
+
+    document.getElementById("callCopyNotes").addEventListener("click", function () {
+      var t = callById(callState.id);
+      var notes = document.getElementById("callNotes").value.trim();
+      var due = document.getElementById("callDue").value.trim();
+      var txt = "Anruf: " + t.title + "\n" + new Date().toLocaleString("de-DE") +
+        (notes ? "\n\n" + notes : "") + (due ? "\n\nZugesagt bis: " + due : "");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () { callMessage("Notizen kopiert"); }, function () {});
+      }
+    });
+
+    document.getElementById("callToTask").addEventListener("click", function () {
+      var t = callById(callState.id);
+      var todo = document.getElementById("callTodo").value.trim();
+      var due = document.getElementById("callDue").value.trim();
+      var label = todo || ("Nachfassen: " + t.title);
+      // Datumsangabe mit derselben Erkennung wie im Fristen-Reiter auswerten
+      var parsed = parseInput(due);
+      items.push({
+        id: "t" + Date.now() + Math.random().toString(36).slice(2, 6),
+        text: label,
+        subject: "Anruf",
+        dueKey: parsed.dueKey,
+        isFixed: true,
+        done: false,
+        createdAt: Date.now()
+      });
+      save(items);
+      render();
+      callMessage(parsed.dueKey ? "Als Frist gemerkt (" + formatDue(parsed.dueKey) + ")" : "Als Frist gemerkt (ohne Termin)");
+    });
+  }
+
+  function callMessage(txt) {
+    var el = document.getElementById("callMsg");
+    if (!el) return;
+    el.textContent = txt;
+    setTimeout(function () { if (el) el.textContent = ""; }, 2600);
+  }
+
+  function renderCallAll() { renderCallCats(); renderCallFields(); renderCallSheet(); }
+
+  callCatsEl.addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-call]"); if (!b) return;
+    callState.id = b.dataset.call;
+    renderCallAll();
+  });
+
+  callFieldsEl.addEventListener("input", function (ev) {
+    var f = ev.target.closest("[data-callfield]"); if (!f) return;
+    callState.values[f.dataset.callfield] = f.value;
+    if (f.dataset.callfield === "ich") {
+      settings.ich = f.value; saveSettings(settings);
+      msg.values.ich = f.value;
+    }
+    renderCallSheet();
+  });
+
+  callSearchEl.addEventListener("input", renderCallCats);
+
+  renderCallAll();
+
+  /* ======================= Notizen ======================= */
+
+  var NOTES_KEY = "faellig-notizen-v1";
+
+  function loadNotes() {
+    try {
+      var raw = localStorage.getItem(NOTES_KEY);
+      var a = raw ? JSON.parse(raw) : [];
+      return Array.isArray(a) ? a : [];
+    } catch (e) { return []; }
+  }
+
+  function saveNotes() {
+    try { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); } catch (e) {}
+  }
+
+  var notes = loadNotes();
+  var noteListEl = document.getElementById("noteList");
+
+  function renderNotes() {
+    if (!notes.length) {
+      noteListEl.innerHTML = '<div class="empty"><div class="empty__big">Noch keine Notizen.</div>' +
+        '<div class="empty__hint">Gut für Sachen, die kein Datum haben, die man aber ständig sucht.</div></div>';
+      return;
+    }
+    noteListEl.innerHTML = notes.map(function (n) {
+      var d = new Date(n.createdAt);
+      return '<div class="note" data-note="' + n.id + '">' +
+        '<textarea data-noteinput="' + n.id + '" placeholder="Notiz …">' + esc(n.text || "") + "</textarea>" +
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
+          '<button class="note__del" data-notedel="' + n.id + '" aria-label="Notiz löschen" title="Löschen">×</button>' +
+          '<span class="note__date">' + d.getDate() + "." + (d.getMonth() + 1) + "." + "</span>" +
+        "</div></div>";
+    }).join("");
+  }
+
+  document.getElementById("noteNew").addEventListener("click", function () {
+    var id = "n" + Date.now() + Math.random().toString(36).slice(2, 5);
+    notes.unshift({ id: id, text: "", createdAt: Date.now() });
+    saveNotes();
+    renderNotes();
+    var el = noteListEl.querySelector('[data-noteinput="' + id + '"]');
+    if (el) el.focus();
+  });
+
+  noteListEl.addEventListener("input", function (ev) {
+    var t = ev.target.closest("[data-noteinput]"); if (!t) return;
+    var n = notes.find(function (x) { return x.id === t.dataset.noteinput; });
+    if (n) { n.text = t.value; saveNotes(); }
+  });
+
+  noteListEl.addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-notedel]"); if (!b) return;
+    var n = notes.find(function (x) { return x.id === b.dataset.notedel; });
+    // Nur nachfragen, wenn wirklich etwas drinsteht.
+    if (n && (n.text || "").trim() && !confirm("Diese Notiz löschen?")) return;
+    notes = notes.filter(function (x) { return x.id !== b.dataset.notedel; });
+    saveNotes();
+    renderNotes();
+  });
+
+  renderNotes();
+
+
+  /* ======================= Sichern & Uebertragen ======================= */
+
+  var expTextEl = document.getElementById("expText");
+  var expMsgEl = document.getElementById("expMsg");
+  var impTextEl = document.getElementById("impText");
+  var impMsgEl = document.getElementById("impMsg");
+  var impFileEl = document.getElementById("impFile");
+  var impMergeBtn = document.getElementById("impMerge");
+  var impReplaceBtn = document.getElementById("impReplace");
+  var backupEl = document.getElementById("backup");
+
+  // Geprueftes Paket, das auf "Dazunehmen" oder "Alles ersetzen" wartet.
+  var wartendesPaket = null;
+
+  function meldung(el, text, ok) {
+    el.textContent = text || "";
+    if (ok === undefined || ok === null) el.removeAttribute("data-ok");
+    else el.setAttribute("data-ok", ok ? "true" : "false");
+  }
+
+  function paketBauen() {
+    return {
+      app: "faellig",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      items: items,
+      notes: notes,
+      settings: settings,
+    };
+  }
+
+  function paketText() { return JSON.stringify(paketBauen(), null, 2); }
+
+  function sicherungsName() {
+    var d = new Date();
+    function zz(n) { return (n < 10 ? "0" : "") + n; }
+    return "faellig-" + d.getFullYear() + "-" + zz(d.getMonth() + 1) + "-" + zz(d.getDate()) + ".json";
+  }
+
+  function expFuellen() { expTextEl.value = paketText(); }
+
+  // Beim Aufklappen immer den aktuellen Stand zeigen.
+  backupEl.addEventListener("toggle", function () {
+    if (backupEl.open) { expFuellen(); meldung(expMsgEl, ""); }
+  });
+
+  function mengenText(eintraege, notizen) {
+    var fristen = 0, todos = 0, abos = 0;
+    eintraege.forEach(function (i) {
+      if (isAbo(i)) abos++;
+      else if (i.dueKey) fristen++;
+      else todos++;
+    });
+    var teile = [];
+    if (fristen) teile.push(fristen + (fristen === 1 ? " Frist" : " Fristen"));
+    if (todos) teile.push(todos + (todos === 1 ? " To-do" : " To-dos"));
+    if (abos) teile.push(abos + (abos === 1 ? " Abo" : " Abos"));
+    if (notizen.length) teile.push(notizen.length + (notizen.length === 1 ? " Notiz" : " Notizen"));
+    if (!teile.length) return "nichts";
+    if (teile.length === 1) return teile[0];
+    return teile.slice(0, -1).join(", ") + " und " + teile[teile.length - 1];
+  }
+
+  /* ---------- Sichern ---------- */
+
+  function blobSpeichern(name, text) {
+    try {
+      var blob = new Blob([text], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function ohneDateiHinweis() {
+    meldung(expMsgEl, "Als Datei geht hier nicht \u2014 nimm \u201eText kopieren\u201c.", false);
+  }
+
+  document.getElementById("expFile").addEventListener("click", function () {
+    expFuellen();
+    var text = expTextEl.value;
+    var name = sicherungsName();
+    meldung(expMsgEl, "");
+
+    // In der Claude-Ansicht laeuft Speichern ueber die eingebaute Funktion.
+    // Der normale Browser-Download ist dort abgeschaltet \u2014 er wuerde ohne
+    // Fehler nichts tun. Deshalb wird er nur ausserhalb ueberhaupt versucht.
+    var imClaude = false;
+    var zugriff = null;
+    try {
+      if (window.claude && typeof window.claude.use === "function") {
+        imClaude = true;
+        zugriff = window.claude.use("downloads");
+      }
+    } catch (e) { zugriff = null; }
+
+    function normalerWeg() {
+      if (!imClaude && blobSpeichern(name, text)) meldung(expMsgEl, "Gespeichert als " + name + ".", true);
+      else ohneDateiHinweis();
+    }
+
+    if (!zugriff) { normalerWeg(); return; }
+
+    Promise.resolve(zugriff).then(function (dl) {
+      if (!dl || typeof dl.save !== "function") { normalerWeg(); return; }
+      return dl.save({ filename: name, data: text }).then(function () {
+        meldung(expMsgEl, "Gespeichert als " + name + ".", true);
+      }, function (err) {
+        var code = err && err.code;
+        if (code === "declined") { meldung(expMsgEl, "Abgebrochen.", false); return; }
+        if (code === "rate_limited") { meldung(expMsgEl, "Kurz warten und nochmal tippen.", false); return; }
+        normalerWeg();
+      });
+    })["catch"](function () { normalerWeg(); });
+  });
+
+  document.getElementById("expCopy").addEventListener("click", function () {
+    expFuellen();
+    var text = expTextEl.value;
+
+    function markieren() {
+      try {
+        expTextEl.focus();
+        expTextEl.setSelectionRange(0, text.length);
+      } catch (e) {}
+    }
+
+    function notfall() {
+      markieren();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      if (ok) meldung(expMsgEl, "Kopiert \u2014 jetzt irgendwo einf\u00fcgen und aufheben.", true);
+      else meldung(expMsgEl, "Text ist markiert \u2014 jetzt mit Strg+C bzw. langem Tippen kopieren.", false);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        meldung(expMsgEl, "Kopiert \u2014 jetzt irgendwo einf\u00fcgen und aufheben.", true);
+      }, notfall);
+    } else {
+      notfall();
+    }
+  });
+
+  /* ---------- Uebertragen ---------- */
+
+  function gueltigerEintrag(x) {
+    return !!(x && typeof x === "object" && typeof x.text === "string" && x.text.trim());
+  }
+
+  function gueltigeNotiz(x) {
+    return !!(x && typeof x === "object" && typeof x.text === "string");
+  }
+
+  function neueId(prefix) {
+    return prefix + Date.now() + Math.random().toString(36).slice(2, 6);
+  }
+
+  function saeubernEintrag(x) {
+    return {
+      id: (typeof x.id === "string" && x.id) ? x.id : neueId("t"),
+      text: String(x.text),
+      subject: (typeof x.subject === "string") ? x.subject : null,
+      dueKey: (typeof x.dueKey === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x.dueKey)) ? x.dueKey : null,
+      isFixed: !!x.isFixed,
+      repeat: (x.repeat && typeof x.repeat === "object") ? x.repeat : null,
+      amountCents: (typeof x.amountCents === "number" && isFinite(x.amountCents)) ? x.amountCents : null,
+      done: !!x.done,
+      createdAt: (typeof x.createdAt === "number" && isFinite(x.createdAt)) ? x.createdAt : Date.now(),
+    };
+  }
+
+  function saeubernNotiz(x) {
+    return {
+      id: (typeof x.id === "string" && x.id) ? x.id : neueId("n"),
+      text: String(x.text),
+      createdAt: (typeof x.createdAt === "number" && isFinite(x.createdAt)) ? x.createdAt : Date.now(),
+    };
+  }
+
+  function paketVergessen() {
+    wartendesPaket = null;
+    impMergeBtn.disabled = true;
+    impReplaceBtn.disabled = true;
+  }
+
+  function paketPruefen(roh) {
+    paketVergessen();
+    var text = (roh || "").trim();
+    if (!text) { meldung(impMsgEl, ""); return; }
+
+    var p;
+    try { p = JSON.parse(text); }
+    catch (e) { meldung(impMsgEl, "Das ist keine g\u00fcltige Sicherung.", false); return; }
+
+    if (!p || typeof p !== "object" || Array.isArray(p) || p.app !== "faellig") {
+      meldung(impMsgEl, "Das sieht nicht nach einer F\u00e4llig-Sicherung aus.", false);
+      return;
+    }
+
+    var eintraege = (Array.isArray(p.items) ? p.items : []).filter(gueltigerEintrag).map(saeubernEintrag);
+    var notizen = (Array.isArray(p.notes) ? p.notes : []).filter(gueltigeNotiz).map(saeubernNotiz);
+    var einst = (p.settings && typeof p.settings === "object" && !Array.isArray(p.settings)) ? p.settings : {};
+
+    if (!eintraege.length && !notizen.length) {
+      meldung(impMsgEl, "Die Sicherung ist leer.", false);
+      return;
+    }
+
+    wartendesPaket = { items: eintraege, notes: notizen, settings: einst };
+    impMergeBtn.disabled = false;
+    impReplaceBtn.disabled = false;
+    meldung(impMsgEl, "Gefunden: " + mengenText(eintraege, notizen) + ".", true);
+  }
+
+  impTextEl.addEventListener("input", function () { paketPruefen(impTextEl.value); });
+
+  var impFilenameEl = document.getElementById("impFilename");
+
+  document.getElementById("impPick").addEventListener("click", function () { impFileEl.click(); });
+
+  impFileEl.addEventListener("change", function () {
+    var f = impFileEl.files && impFileEl.files[0];
+    impFilenameEl.textContent = f ? f.name : "Keine Datei gew\u00e4hlt";
+    if (!f) { paketVergessen(); meldung(impMsgEl, ""); return; }
+    var leser = new FileReader();
+    leser.onload = function () {
+      impTextEl.value = String(leser.result || "");
+      paketPruefen(impTextEl.value);
+    };
+    leser.onerror = function () {
+      paketVergessen();
+      meldung(impMsgEl, "Datei l\u00e4sst sich nicht lesen.", false);
+    };
+    leser.readAsText(f);
+  });
+
+  // Nach dem Uebertragen muss ueberall der neue Stand stehen.
+  function allesNeuZeichnen() {
+    msg.values.ich = settings.ich || "";
+    callState.values.ich = settings.ich || "";
+    render();
+    renderNotes();
+    renderMsgAll();
+    renderCallAll();
+    refreshPreview();
+  }
+
+  function fertig(text) {
+    meldung(impMsgEl, text, true);
+    impTextEl.value = "";
+    try { impFileEl.value = ""; } catch (e) {}
+    impFilenameEl.textContent = "Keine Datei gew\u00e4hlt";
+    paketVergessen();
+    if (backupEl.open) expFuellen();
+  }
+
+  impMergeBtn.addEventListener("click", function () {
+    if (!wartendesPaket) return;
+    var p = wartendesPaket;
+
+    var vorhandeneIds = {};
+    items.forEach(function (i) { vorhandeneIds[i.id] = true; });
+    var notizIds = {};
+    notes.forEach(function (n) { notizIds[n.id] = true; });
+
+    var neueEintraege = p.items.filter(function (i) { return !vorhandeneIds[i.id]; });
+    var neueNotizen = p.notes.filter(function (n) { return !notizIds[n.id]; });
+
+    neueEintraege.forEach(function (i) { items.push(i); });
+    neueNotizen.forEach(function (n) { notes.push(n); });
+    notes.sort(function (a, b) { return b.createdAt - a.createdAt; });
+
+    if (!settings.ich && p.settings.ich) settings.ich = p.settings.ich;
+
+    save(items);
+    saveNotes();
+    saveSettings(settings);
+    allesNeuZeichnen();
+
+    var dazu = neueEintraege.length + neueNotizen.length;
+    if (!dazu) fertig("War schon alles da \u2014 nichts doppelt angelegt.");
+    else fertig("Dazugekommen: " + mengenText(neueEintraege, neueNotizen) + ".");
+  });
+
+  impReplaceBtn.addEventListener("click", function () {
+    if (!wartendesPaket) return;
+    var vorher = mengenText(items, notes);
+    if (!confirm("Alles ersetzen?\n\nWas jetzt drin ist (" + vorher + "), wird gel\u00f6scht und durch die Sicherung ersetzt.")) return;
+
+    var p = wartendesPaket;
+    items.length = 0;
+    p.items.forEach(function (i) { items.push(i); });
+    notes.length = 0;
+    p.notes.forEach(function (n) { notes.push(n); });
+    notes.sort(function (a, b) { return b.createdAt - a.createdAt; });
+
+    if (p.settings.ich) settings.ich = p.settings.ich;
+
+    save(items);
+    saveNotes();
+    saveSettings(settings);
+    allesNeuZeichnen();
+    fertig("Ersetzt \u2014 jetzt drin: " + mengenText(items, notes) + ".");
+  });
+
+  expFuellen();
 
   refreshPreview();
   render();

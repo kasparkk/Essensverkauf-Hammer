@@ -1,5 +1,5 @@
 // Macht die App offline nutzbar: einmal geladen, laeuft sie ohne Internet weiter.
-var CACHE = "faellig-v1";
+var CACHE = "faellig-v2";
 var ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", function (ev) {
