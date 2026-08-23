@@ -1,0 +1,33 @@
+# Veroeffentlicht wird nur der faellig-Ordner, der Rest des Repos bleibt aussen vor.
+[build]
+  publish = "faellig"
+
+# Kein Build-Schritt: das sind fertige Dateien.
+[build.environment]
+  NETLIFY_USE_YARN = "false"
+
+# Der Service Worker und die Seite selbst duerfen nicht hart zwischengespeichert
+# werden, sonst kommen Aenderungen beim Handy nie an.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    # Ohne diesen Typ liefert Netlify application/octet-stream aus; manche
+    # Browser lehnen den Web-App-Nachweis dann ab.
+    Content-Type = "application/manifest+json; charset=utf-8"
+
+# Icons aendern sich praktisch nie.
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
