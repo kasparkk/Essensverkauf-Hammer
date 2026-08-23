@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#15706a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Fällig</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #e9ecf1;
+    --surface: #ffffff;
+    --surface-2: #f2f4f8;
+    --line: #d5dae2;
+    --line-soft: #e4e8ee;
+    --ink: #14171d;
+    --ink-soft: #565e6b;
+    --ink-faint: #8b94a1;
+    --accent: #15706a;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcecea;
+    --marker: #ffd60a;
+    --over: #c62f2f;
+    --today: #b45c00;
+    --done: #3f8a58;
+    --shadow: rgba(20, 25, 35, 0.10);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #12151b;
+      --surface: #191d25;
+      --surface-2: #21262f;
+      --line: #2f3641;
+      --line-soft: #262c35;
+      --ink: #e8eaef;
+      --ink-soft: #9aa3b1;
+      --ink-faint: #666f7d;
+      --accent: #57c7bb;
+      --accent-ink: #10201e;
+      --accent-soft: #1e3b38;
+      --marker: #ffd60a;
+      --over: #ff7070;
+      --today: #ffb454;
+      --done: #63b37f;
+      --shadow: rgba(0, 0, 0, 0.45);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #12151b;
+    --surface: #191d25;
+    --surface-2: #21262f;
+    --line: #2f3641;
+    --line-soft: #262c35;
+    --ink: #e8eaef;
+    --ink-soft: #9aa3b1;
+    --ink-faint: #666f7d;
+    --accent: #57c7bb;
+    --accent-ink: #10201e;
+    --accent-soft: #1e3b38;
+    --marker: #ffd60a;
+    --over: #ff7070;
+    --today: #ffb454;
+    --done: #63b37f;
+    --shadow: rgba(0, 0, 0, 0.45);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 16px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ---------- Kopf ---------- */
+
+  .head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .head__title {
+    margin: 0;
+    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .head__date {
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    margin-top: 5px;
+  }
+
+  .head__count {
+    text-align: right;
+    line-height: 1.1;
+    flex: none;
+  }
+
+  .head__count b {
+    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 2rem;
+    display: block;
+    letter-spacing: -0.02em;
+  }
+
+  .head__count span {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+  }
+
+  .head__count[data-urgent="true"] b { color: var(--over); }
+
+  /* ---------- Reiter ---------- */
+
+  .tabs {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+    align-self: flex-start;
+  }
+
+  .tab {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .tab[aria-selected="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+
+  .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .pane { display: none; flex-direction: column; gap: 20px; }
+  .pane.is-active { display: flex; }
+
+  /* ---------- Nachrichten-Baukasten ---------- */
+
+  .switches { display: flex; flex-wrap: wrap; gap: 16px; }
+  .switch { display: flex; flex-direction: column; gap: 6px; }
+
+  .switch__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 600;
+    color: var(--ink-faint);
+  }
+
+  .segmented {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .seg {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 7px 13px;
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .seg[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .picker {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 8px 22px var(--shadow);
+  }
+
+  .context {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 12px;
+    font-size: 0.84rem;
+    color: var(--ink);
+  }
+
+  .context b { font-weight: 600; }
+
+  .context__clear {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+    flex: none;
+  }
+
+  .search {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+
+  .search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .search::placeholder { color: var(--ink-faint); }
+
+  .cat { margin-bottom: 12px; }
+  .cat:last-child { margin-bottom: 0; }
+
+  .cat__name {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 600;
+    color: var(--ink-faint);
+    margin-bottom: 7px;
+  }
+
+  .cat__items { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .tpl {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 7px 13px;
+    font: inherit;
+    font-size: 0.86rem;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .tpl:hover { border-color: var(--accent); }
+  .tpl:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tpl[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+  .noresult { color: var(--ink-faint); font-size: 0.88rem; padding: 6px 2px; }
+
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field__label { font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); }
+
+  .field__input {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 9px 11px;
+    font: inherit;
+    font-size: 0.92rem;
+    color: var(--ink);
+    width: 100%;
+  }
+
+  .field__input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .field__input::placeholder { color: var(--ink-faint); }
+
+  .result {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 22px var(--shadow);
+  }
+
+  .result__bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--surface-2);
+  }
+
+  .result__kind {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .result__spacer { flex: 1 1 auto; }
+
+  .copybtn {
+    border: none;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-radius: 8px;
+    padding: 8px 15px;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .copybtn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .copybtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .result__betreff { padding: 11px 16px 0; font-size: 0.86rem; color: var(--ink-soft); }
+  .result__betreff b { color: var(--ink); font-weight: 600; }
+
+  .result__text {
+    margin: 0;
+    padding: 14px 16px 18px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.03rem;
+    line-height: 1.62;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .gap {
+    background: var(--accent-soft);
+    color: var(--ink);
+    border-radius: 4px;
+    padding: 0 4px;
+    font-family: system-ui, sans-serif;
+    font-size: 0.86em;
+    font-weight: 600;
+  }
+
+  .result__empty {
+    padding: 34px 20px;
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: 0.93rem;
+    line-height: 1.55;
+  }
+
+  /* Knopf an jeder Aufgabe, der zum Textbaukasten fuehrt */
+  .task__write {
+    flex: none;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    border-radius: 7px;
+    padding: 4px 9px;
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+    align-self: center;
+  }
+
+  .task__write:hover { border-color: var(--accent); color: var(--accent); }
+  .task__write:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Eingabe ---------- */
+
+  .add {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 8px 24px var(--shadow);
+  }
+
+  .add__field {
+    display: flex;
+    gap: 8px;
+  }
+
+  .add__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 13px;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+  }
+
+  .add__input::placeholder { color: var(--ink-faint); }
+  .add__input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .add__submit {
+    flex: none;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0 18px;
+    cursor: pointer;
+  }
+
+  .add__submit:disabled { opacity: 0.4; cursor: not-allowed; }
+  .add__submit:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* Live-Vorschau: zeigt, was die App verstanden hat */
+  .preview {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    min-height: 26px;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .chip--subject { color: var(--accent); border-color: currentColor; }
+  .chip--exam { color: var(--over); border-color: currentColor; }
+  .chip--date { color: var(--ink); }
+
+  .quickdates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .quickdates__label {
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    align-self: center;
+    margin-right: 2px;
+  }
+
+  .qbtn {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    border-radius: 999px;
+    padding: 4px 11px;
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+
+  .qbtn:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .qbtn[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .qbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Liste ---------- */
+
+  .group { display: flex; flex-direction: column; gap: 8px; }
+
+  .group__head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 700;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+
+  .group__head[data-tone="over"] { color: var(--over); }
+  .group__head[data-tone="today"] { color: var(--today); }
+
+  .group__count { font-weight: 500; letter-spacing: 0; text-transform: none; }
+
+  .task {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line);
+    border-radius: 9px;
+    padding: 11px 12px;
+  }
+
+  .task[data-tone="over"] { border-left-color: var(--over); }
+  .task[data-tone="today"] { border-left-color: var(--marker); }
+  .task[data-exam="true"] { border-color: var(--over); }
+
+  .task__check {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    border-radius: 6px;
+    border: 2px solid var(--ink-faint);
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    padding: 0;
+  }
+
+  .task__check:hover { border-color: var(--done); }
+  .task__check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .task__body { flex: 1 1 auto; min-width: 0; }
+
+  .task__text {
+    font-size: 0.97rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .task__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+  }
+
+  .task__subject {
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .task__due[data-tone="over"] { color: var(--over); font-weight: 600; }
+  .task__due[data-tone="today"] { color: var(--today); font-weight: 600; }
+
+  .task__badge {
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 0 7px;
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: var(--over);
+  }
+
+  .task__del {
+    flex: none;
+    border: none;
+    background: transparent;
+    color: var(--ink-faint);
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: 6px;
+    opacity: 0;
+  }
+
+  .task:hover .task__del, .task__del:focus-visible { opacity: 1; }
+  .task__del:hover { color: var(--over); }
+  .task__del:focus-visible { outline: 2px solid var(--accent); }
+
+  @media (hover: none) {
+    .task__del { opacity: 1; }
+  }
+
+  /* ---------- Erledigt ---------- */
+
+  .done-wrap { margin-top: 8px; }
+
+  .done-toggle {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--line);
+    padding: 12px 2px;
+    font: inherit;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .done-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .done-toggle__arrow { transition: transform 0.15s ease; display: inline-block; }
+  .done-wrap.is-open .done-toggle__arrow { transform: rotate(90deg); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .done-toggle__arrow { transition: none; }
+  }
+
+  .done-list { display: none; flex-direction: column; gap: 6px; padding-top: 4px; }
+  .done-wrap.is-open .done-list { display: flex; }
+
+  .done-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    font-size: 0.86rem;
+    color: var(--ink-faint);
+  }
+
+  .done-item__text { flex: 1 1 auto; text-decoration: line-through; overflow-wrap: anywhere; }
+
+  .done-item__undo {
+    flex: none;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font: inherit;
+    font-size: 0.74rem;
+    cursor: pointer;
+  }
+
+  .done-item__undo:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .done-item__undo:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Leerzustand ---------- */
+
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ink-faint);
+  }
+
+  .empty__big {
+    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+
+  .empty__hint { font-size: 0.87rem; line-height: 1.5; }
+
+  .foot {
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+    line-height: 1.6;
+    text-align: center;
+    border-top: 1px solid var(--line-soft);
+    padding-top: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="head">
+    <div>
+      <h1 class="head__title">Fällig</h1>
+      <div class="head__date" id="todayLabel">—</div>
+    </div>
+    <div class="head__count" id="headCount" data-urgent="false">
+      <b id="countNum">0</b>
+      <span id="countLabel">offen</span>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tabFristen" type="button" role="tab" aria-selected="true" aria-controls="paneFristen">Fristen</button>
+    <button class="tab" id="tabTexte" type="button" role="tab" aria-selected="false" aria-controls="paneTexte">Texte</button>
+  </div>
+
+  <div class="pane is-active" id="paneFristen" role="tabpanel" aria-labelledby="tabFristen">
+
+  <section class="add">
+    <form class="add__field" id="addForm">
+      <input
+        class="add__input"
+        id="addInput"
+        type="text"
+        autocomplete="off"
+        placeholder="z. B. Vermieter: Nebenkosten bis Freitag"
+        aria-label="Neuer Eintrag"
+      />
+      <button class="add__submit" id="addSubmit" type="submit" disabled>Merken</button>
+    </form>
+
+    <div class="preview" id="preview" aria-live="polite">
+      <span id="previewHint">Einfach lostippen — Termine wie „morgen“, „Freitag“ oder „12.5.“ erkennt sie selbst.</span>
+    </div>
+
+    <div class="quickdates">
+      <span class="quickdates__label">Termin:</span>
+      <button class="qbtn" type="button" data-quick="today" aria-pressed="false">Heute</button>
+      <button class="qbtn" type="button" data-quick="tomorrow" aria-pressed="false">Morgen</button>
+      <button class="qbtn" type="button" data-quick="week" aria-pressed="false">In 1 Woche</button>
+      <button class="qbtn" type="button" data-quick="none" aria-pressed="false">Ohne</button>
+    </div>
+  </section>
+
+  <main id="list"></main>
+
+  <div class="done-wrap" id="doneWrap">
+    <button class="done-toggle" id="doneToggle" type="button" aria-expanded="false">
+      <span class="done-toggle__arrow">›</span>
+      <span id="doneToggleLabel">Erledigt (0)</span>
+    </button>
+    <div class="done-list" id="doneList"></div>
+  </div>
+
+  </div><!-- /paneFristen -->
+
+  <div class="pane" id="paneTexte" role="tabpanel" aria-labelledby="tabTexte">
+    <div class="switches">
+      <div class="switch">
+        <span class="switch__label">Wohin</span>
+        <div class="segmented" id="channelSeg" role="group" aria-label="Kanal">
+          <button class="seg" type="button" data-channel="whatsapp" aria-pressed="true">WhatsApp</button>
+          <button class="seg" type="button" data-channel="mail" aria-pressed="false">E-Mail</button>
+        </div>
+      </div>
+      <div class="switch">
+        <span class="switch__label">Ton</span>
+        <div class="segmented" id="toneSeg" role="group" aria-label="Ton">
+          <button class="seg" type="button" data-tone="locker" aria-pressed="false">Locker</button>
+          <button class="seg" type="button" data-tone="sachlich" aria-pressed="true">Sachlich</button>
+          <button class="seg" type="button" data-tone="bestimmt" aria-pressed="false">Bestimmt</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="picker">
+      <div class="context" id="context" style="display:none;">
+        <span>Bezieht sich auf: <b id="contextText"></b></span>
+        <button class="context__clear" id="contextClear" type="button">lösen</button>
+      </div>
+      <input class="search" id="search" type="search" placeholder="Situation suchen — z. B. absagen, krank, Rechnung" aria-label="Situation suchen" />
+      <div id="cats"></div>
+      <div class="fields" id="fields" style="display:none;"></div>
+    </section>
+
+    <section class="result">
+      <div class="result__bar">
+        <span class="result__kind" id="resultKind">Vorschau</span>
+        <span class="result__spacer"></span>
+        <button class="copybtn" id="copyBtn" type="button" disabled>Kopieren</button>
+      </div>
+      <div id="resultBody">
+        <div class="result__empty">Wähl eine Situation — der fertige Text steht sofort hier.</div>
+      </div>
+    </section>
+  </div><!-- /paneTexte -->
+
+  <p class="foot">
+    Alles bleibt in diesem Browser gespeichert — nichts wird hochgeladen.
+    Lege dir den Link auf den Startbildschirm, dann ist alles immer griffbereit.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "faellig-aufgaben-v1";
+
+  /* ======================= Datum-Werkzeug ======================= */
+
+  var WEEKDAYS_LONG = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+  var WEEKDAYS_SHORT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+  var MONTHS_SHORT = ["Jan", "Feb", "März", "Apr", "Mai", "Juni", "Juli", "Aug", "Sep", "Okt", "Nov", "Dez"];
+
+  function startOfDay(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  function today() { return startOfDay(new Date()); }
+
+  function addDays(d, n) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  }
+
+  // Schlüssel als reines Kalenderdatum – keine Zeitzonen-Verschiebung wie bei toISOString().
+  function toKey(d) {
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function fromKey(key) {
+    var p = key.split("-");
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+
+  function daysUntil(key) {
+    return Math.round((fromKey(key) - today()) / 86400000);
+  }
+
+  function formatDue(key) {
+    var diff = daysUntil(key);
+    var d = fromKey(key);
+    var stamp = WEEKDAYS_SHORT[d.getDay()] + " " + d.getDate() + ". " + MONTHS_SHORT[d.getMonth()];
+    if (diff === 0) return "heute";
+    if (diff === 1) return "morgen";
+    if (diff === -1) return "gestern fällig";
+    if (diff < -1) return "seit " + Math.abs(diff) + " Tagen fällig";
+    if (diff <= 6) return stamp + " (in " + diff + " Tagen)";
+    return stamp;
+  }
+
+  /* ======================= Eingabe verstehen ======================= */
+
+  // Keine feste Kategorienliste: Was du einmal mit "Kategorie: ..." schreibst,
+  // erkennt die App danach auch ohne Doppelpunkt wieder.
+  function knownCategories() {
+    var seen = {};
+    items.forEach(function (i) {
+      if (i.subject) seen[i.subject.toLowerCase()] = i.subject;
+    });
+    return seen;
+  }
+
+  // Wörter, die auf einen festen Termin statt eine Aufgabe hindeuten.
+  var FIXED_WORDS = [
+    "termin", "meeting", "besprechung", "gespräch", "gespraech", "anruf",
+    "arzt", "zahnarzt", "frist", "deadline", "abgabe", "abgeben",
+    "rechnung", "zahlung", "überweisung", "ueberweisung", "kündigung", "kuendigung",
+    "bewerbung", "vorstellungsgespräch", "prüfung", "pruefung", "klausur", "test"
+  ];
+
+  var WEEKDAY_WORDS = {
+    "montag": 1, "mo": 1, "dienstag": 2, "di": 2, "mittwoch": 3, "mi": 3,
+    "donnerstag": 4, "do": 4, "freitag": 5, "fr": 5, "samstag": 6, "sa": 6,
+    "sonnabend": 6, "sonntag": 0, "so": 0
+  };
+
+  // JavaScripts \b kennt nur A–Z0-9_, also gilt vor "ü" keine Wortgrenze und
+  // "übermorgen" würde nie gefunden. Darum eigene Grenzen mit Umlauten.
+  var WORDCH = "0-9A-Za-zÄÖÜäöüß";
+  var PRE = "(^|[^" + WORDCH + "])";   // Gruppe 1: Trennzeichen davor
+  var POST = "(?![" + WORDCH + "])";
+
+  function wordRe(body) {
+    return new RegExp(PRE + "(?:" + body + ")" + POST);
+  }
+
+  // Liefert { date, start, end } oder null. start/end klammern nur das
+  // Datumswort ein – ohne das Trennzeichen aus Gruppe 1.
+  function findDate(text) {
+    var lower = text.toLowerCase();
+    var base = today();
+
+    function res(date, m) {
+      var lead = (m[1] || "").length;
+      return { date: date, start: m.index + lead, end: m.index + m[0].length };
+    }
+
+    var m;
+
+    // "übermorgen" vor "morgen" prüfen, sonst greift das kürzere Wort zuerst.
+    m = lower.match(wordRe("übermorgen|uebermorgen"));
+    if (m) return res(addDays(base, 2), m);
+
+    m = lower.match(wordRe("heute"));
+    if (m) return res(base, m);
+
+    m = lower.match(wordRe("morgen"));
+    if (m) return res(addDays(base, 1), m);
+
+    m = lower.match(wordRe("in\\s+(\\d{1,2})\\s+tage?n?"));
+    if (m) return res(addDays(base, Number(m[2])), m);
+
+    m = lower.match(wordRe("in\\s+(?:einer|1)\\s+woche"));
+    if (m) return res(addDays(base, 7), m);
+
+    m = lower.match(wordRe("in\\s+(\\d{1,2})\\s+wochen"));
+    if (m) return res(addDays(base, Number(m[2]) * 7), m);
+
+    m = lower.match(wordRe("(?:nächste|naechste)n?\\s+woche"));
+    if (m) return res(addDays(base, 7), m);
+
+    // Datum wie 12.5. / 12.05. / 12.5.2026
+    m = lower.match(new RegExp(PRE + "(\\d{1,2})\\.\\s?(\\d{1,2})\\.(?:\\s?(\\d{4}|\\d{2}))?"));
+    if (m) {
+      var day = Number(m[2]), mon = Number(m[3]) - 1;
+      var yearRaw = m[4];
+      var year;
+      if (yearRaw) {
+        year = Number(yearRaw);
+        if (year < 100) year += 2000;
+      } else {
+        year = base.getFullYear();
+      }
+      var cand = new Date(year, mon, day);
+      // Plausibel? (z. B. 31.02. abfangen)
+      if (cand.getMonth() === mon && cand.getDate() === day) {
+        // Ohne Jahresangabe: ein Datum kurz in der Vergangenheit ist fast immer
+        // eine überfällige Aufgabe – erst weiter zurück ist das nächste Jahr gemeint.
+        if (!yearRaw && cand < base) {
+          var daysBack = Math.round((base - cand) / 86400000);
+          if (daysBack > 45) cand = new Date(year + 1, mon, day);
+        }
+        return res(cand, m);
+      }
+    }
+
+    // Wochentage: "bis Freitag", "Fr", "am Montag", "nächsten Freitag"
+    var wdBody = "(am|bis|zum|nächsten|naechsten|kommenden)?\\s*"
+      + "(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonnabend|sonntag"
+      + "|mo|di|mi|do|fr|sa|so)\\.?";
+    m = lower.match(new RegExp(PRE + wdBody + POST));
+    if (m) {
+      var target = WEEKDAY_WORDS[m[3]];
+      var cur = base.getDay();
+      var delta = (target - cur + 7) % 7;
+      var qualifier = m[2] || "";
+      // "nächsten Freitag" meint die kommende Woche.
+      if (/nächsten|naechsten|kommenden/.test(qualifier)) {
+        delta = delta === 0 ? 7 : delta + 7;
+      }
+      return res(addDays(base, delta), m);
+    }
+
+    return null;
+  }
+
+  function parseInput(raw) {
+    var text = raw.trim();
+    if (!text) return { text: "", subject: null, dueKey: null, isFixed: false };
+
+    var subject = null;
+
+    // "Vermieter: ..." – alles vor dem Doppelpunkt ist die Kategorie.
+    var colon = text.indexOf(":");
+    if (colon > 0 && colon <= 24) {
+      var cand = text.slice(0, colon).trim();
+      if (cand && cand.split(/\s+/).length <= 2) {
+        subject = cand;
+        text = text.slice(colon + 1).trim();
+      }
+    }
+
+    // Sonst: eine bereits benutzte Kategorie am Zeilenanfang wiedererkennen.
+    if (!subject) {
+      var known = knownCategories();
+      var firstWord = (text.match(/^[0-9A-Za-zÄÖÜäöüß-]+/) || [""])[0];
+      if (firstWord && known[firstWord.toLowerCase()]) {
+        subject = known[firstWord.toLowerCase()];
+        text = text.slice(firstWord.length).trim();
+      }
+    }
+
+    var found = findDate(text);
+    var dueKey = null;
+    if (found) {
+      dueKey = toKey(found.date);
+      // Datumswort aus dem Aufgabentext herausschneiden.
+      text = (text.slice(0, found.start) + " " + text.slice(found.end)).replace(/\s{2,}/g, " ").trim();
+      text = text.replace(/\s*\b(bis|am|zum)\b\s*$/i, "").trim();
+      text = text.replace(/^\s*\b(bis|am|zum)\b\s*/i, "").trim();
+    }
+
+    var lowerAll = raw.toLowerCase();
+    var isFixed = FIXED_WORDS.some(function (w) { return lowerAll.indexOf(w) !== -1; });
+
+    return { text: text, subject: subject, dueKey: dueKey, isFixed: isFixed };
+  }
+
+  /* ======================= Speicher ======================= */
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+
+  function save(items) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch (e) {}
+  }
+
+  var items = load();
+
+  /* ======================= Rendern ======================= */
+
+  var listEl = document.getElementById("list");
+  var doneWrap = document.getElementById("doneWrap");
+  var doneList = document.getElementById("doneList");
+  var doneToggle = document.getElementById("doneToggle");
+  var doneToggleLabel = document.getElementById("doneToggleLabel");
+  var countNum = document.getElementById("countNum");
+  var countLabel = document.getElementById("countLabel");
+  var headCount = document.getElementById("headCount");
+  var todayLabel = document.getElementById("todayLabel");
+
+  function esc(s) {
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function bucketOf(item) {
+    if (!item.dueKey) return "none";
+    var diff = daysUntil(item.dueKey);
+    if (diff < 0) return "over";
+    if (diff === 0) return "today";
+    if (diff === 1) return "tomorrow";
+    if (diff <= 7) return "week";
+    return "later";
+  }
+
+  var BUCKETS = [
+    { id: "over", title: "Überfällig", tone: "over" },
+    { id: "today", title: "Heute", tone: "today" },
+    { id: "tomorrow", title: "Morgen", tone: "" },
+    { id: "week", title: "Diese Woche", tone: "" },
+    { id: "later", title: "Später", tone: "" },
+    { id: "none", title: "Ohne Termin", tone: "" },
+  ];
+
+  function renderTask(item) {
+    var bucket = bucketOf(item);
+    var tone = bucket === "over" ? "over" : bucket === "today" ? "today" : "";
+    var due = item.dueKey ? formatDue(item.dueKey) : "";
+
+    var meta = "";
+    if (item.subject) meta += '<span class="task__subject">' + esc(item.subject) + "</span>";
+    if (item.isFixed) meta += '<span class="task__badge">Termin</span>';
+    if (due) meta += '<span class="task__due" data-tone="' + tone + '">' + esc(due) + "</span>";
+
+    return '<div class="task" data-tone="' + tone + '" data-exam="' + (item.isFixed ? "true" : "false") + '" data-id="' + item.id + '">' +
+      '<button class="task__check" data-act="done" data-id="' + item.id + '" aria-label="Als erledigt markieren"></button>' +
+      '<div class="task__body">' +
+        '<div class="task__text">' + esc(item.text || "(ohne Text)") + "</div>" +
+        (meta ? '<div class="task__meta">' + meta + "</div>" : "") +
+      "</div>" +
+      '<button class="task__write" data-act="write" data-id="' + item.id + '" title="Passenden Text schreiben">Text</button>' +
+      '<button class="task__del" data-act="del" data-id="' + item.id + '" aria-label="Löschen" title="Löschen">×</button>' +
+      "</div>";
+  }
+
+  function render() {
+    var open = items.filter(function (i) { return !i.done; });
+    var done = items.filter(function (i) { return i.done; });
+
+    // Kopfzahl: was heute wirklich ansteht (überfällig + heute).
+    var urgent = open.filter(function (i) {
+      var b = bucketOf(i);
+      return b === "over" || b === "today";
+    }).length;
+
+    countNum.textContent = urgent > 0 ? urgent : open.length;
+    countLabel.textContent = urgent > 0 ? (urgent === 1 ? "für heute" : "für heute") : "offen";
+    headCount.dataset.urgent = urgent > 0 ? "true" : "false";
+
+    var now = today();
+    todayLabel.textContent = WEEKDAYS_LONG[now.getDay()] + ", " + now.getDate() + ". " + MONTHS_SHORT[now.getMonth()];
+
+    if (open.length === 0) {
+      listEl.innerHTML =
+        '<div class="empty">' +
+          '<div class="empty__big">' + (items.length ? "Alles erledigt." : "Noch nichts eingetragen.") + "</div>" +
+          '<div class="empty__hint">' +
+            (items.length
+              ? "Nichts mehr offen — genieß es."
+              : "Tipp einfach los, z.&nbsp;B. „Auto: TÜV bis Donnerstag“.<br>Mit „Kategorie: …“ merkt sich die App die Kategorie für später.") +
+          "</div>" +
+        "</div>";
+    } else {
+      var byBucket = {};
+      open.forEach(function (i) {
+        var b = bucketOf(i);
+        (byBucket[b] = byBucket[b] || []).push(i);
+      });
+
+      var html = "";
+      BUCKETS.forEach(function (b) {
+        var group = byBucket[b.id];
+        if (!group || !group.length) return;
+        group.sort(function (x, y) {
+          if (x.dueKey && y.dueKey && x.dueKey !== y.dueKey) return x.dueKey < y.dueKey ? -1 : 1;
+          if (x.isFixed !== y.isFixed) return x.isFixed ? -1 : 1;
+          return x.createdAt - y.createdAt;
+        });
+        html += '<div class="group">' +
+          '<div class="group__head" data-tone="' + b.tone + '">' + b.title +
+          ' <span class="group__count">' + group.length + "</span></div>" +
+          group.map(renderTask).join("") +
+          "</div>";
+      });
+      listEl.innerHTML = html;
+    }
+
+    doneToggleLabel.textContent = "Erledigt (" + done.length + ")";
+    doneWrap.style.display = done.length ? "block" : "none";
+    doneList.innerHTML = done
+      .slice()
+      .sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); })
+      .map(function (i) {
+        return '<div class="done-item">' +
+          '<span class="done-item__text">' + esc(i.text || "(ohne Text)") + "</span>" +
+          '<button class="done-item__undo" data-act="undo" data-id="' + i.id + '">zurück</button>' +
+          "</div>";
+      }).join("");
+  }
+
+  /* ======================= Eingabe-Steuerung ======================= */
+
+  var addForm = document.getElementById("addForm");
+  var addInput = document.getElementById("addInput");
+  var addSubmit = document.getElementById("addSubmit");
+  var preview = document.getElementById("preview");
+  var quickOverride = null; // vom Nutzer per Knopf gesetzter Termin
+
+  function currentParse() {
+    var p = parseInput(addInput.value);
+    if (quickOverride !== undefined && quickOverride !== null) {
+      p.dueKey = quickOverride === "none" ? null : quickOverride;
+    }
+    return p;
+  }
+
+  function refreshPreview() {
+    var value = addInput.value.trim();
+    addSubmit.disabled = value.length === 0;
+
+    if (!value) {
+      preview.innerHTML = '<span id="previewHint">Einfach lostippen — Termine wie „morgen“, „Freitag“ oder „12.5.“ erkennt sie selbst.</span>';
+      return;
+    }
+
+    var p = currentParse();
+    var bits = "";
+    if (p.subject) bits += '<span class="chip chip--subject">' + esc(p.subject) + "</span>";
+    if (p.isFixed) bits += '<span class="chip chip--exam">Termin</span>';
+    bits += '<span class="chip chip--date">' + (p.dueKey ? esc(formatDue(p.dueKey)) : "ohne Termin") + "</span>";
+    if (p.text) bits += '<span>' + esc(p.text) + "</span>";
+    preview.innerHTML = bits;
+  }
+
+  addInput.addEventListener("input", function () {
+    // Sobald wieder getippt wird, gewinnt der Text – ausser der Knopf wurde danach gedrückt.
+    refreshPreview();
+  });
+
+  document.querySelectorAll("[data-quick]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var kind = btn.dataset.quick;
+      var wasActive = btn.getAttribute("aria-pressed") === "true";
+      document.querySelectorAll("[data-quick]").forEach(function (b) {
+        b.setAttribute("aria-pressed", "false");
+      });
+      if (wasActive) {
+        quickOverride = null;
+      } else {
+        btn.setAttribute("aria-pressed", "true");
+        quickOverride = kind === "today" ? toKey(today())
+          : kind === "tomorrow" ? toKey(addDays(today(), 1))
+          : kind === "week" ? toKey(addDays(today(), 7))
+          : "none";
+      }
+      refreshPreview();
+      addInput.focus();
+    });
+  });
+
+  function clearQuick() {
+    quickOverride = null;
+    document.querySelectorAll("[data-quick]").forEach(function (b) {
+      b.setAttribute("aria-pressed", "false");
+    });
+  }
+
+  addForm.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var value = addInput.value.trim();
+    if (!value) return;
+
+    var p = currentParse();
+    items.push({
+      id: "t" + Date.now() + Math.random().toString(36).slice(2, 6),
+      text: p.text || value,
+      subject: p.subject,
+      dueKey: p.dueKey,
+      isFixed: p.isFixed,
+      done: false,
+      createdAt: Date.now(),
+    });
+    save(items);
+    addInput.value = "";
+    clearQuick();
+    refreshPreview();
+    render();
+    addInput.focus();
+  });
+
+  /* ======================= Klicks auf der Liste ======================= */
+
+  document.addEventListener("click", function (ev) {
+    var btn = ev.target.closest("[data-act]");
+    if (!btn) return;
+    var act = btn.dataset.act;
+    var id = btn.dataset.id;
+    var item = items.find(function (i) { return i.id === id; });
+    if (!item) return;
+
+    if (act === "write") {
+      writeFor(item);
+      return;
+    } else if (act === "done") {
+      item.done = true;
+      item.doneAt = Date.now();
+    } else if (act === "undo") {
+      item.done = false;
+      delete item.doneAt;
+    } else if (act === "del") {
+      items = items.filter(function (i) { return i.id !== id; });
+    }
+    save(items);
+    render();
+  });
+
+  doneToggle.addEventListener("click", function () {
+    var open = doneWrap.classList.toggle("is-open");
+    doneToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+
+  /* ======================= Nachrichten-Baukasten ======================= */
+
+  var TEMPLATES = [
+    // ---------- Absagen & Verschieben ----------
+    {
+      id: "absage-termin", cat: "Absagen & Verschieben", title: "Termin absagen",
+      betreff: "Absage Termin am {wann}",
+      fields: [
+        { key: "wann", gap: "Termin", label: "Wann war der Termin?", ph: "Dienstag, 14 Uhr" },
+        { key: "grund", label: "Grund (optional)", ph: "bin krank", optional: true }
+      ],
+      core: {
+        locker: "ich muss unseren Termin am {wann} leider absagen{grundLocker}. Tut mir leid für die kurzfristige Änderung. Sollen wir gleich einen neuen ausmachen?",
+        sachlich: "leider muss ich den Termin am {wann} absagen{grundSachlich}. Ich bitte um Entschuldigung für die Unannehmlichkeiten und schlage gerne einen Ersatztermin vor.",
+        bestimmt: "hiermit sage ich den Termin am {wann} ab{grundSachlich}. Bitte bestätigen Sie mir die Absage kurz."
+      }
+    },
+    {
+      id: "verschieben", cat: "Absagen & Verschieben", title: "Termin verschieben",
+      betreff: "Terminverschiebung {wann}",
+      fields: [
+        { key: "wann", gap: "bisheriger Termin", label: "Bisheriger Termin", ph: "Mittwoch, 10 Uhr" },
+        { key: "neu", gap: "neuer Vorschlag", label: "Neuer Vorschlag", ph: "Donnerstag oder Freitag" }
+      ],
+      core: {
+        locker: "klappt der Termin am {wann} bei dir auch später? Bei mir ist was dazwischengekommen. {neu} würde mir gut passen — geht das?",
+        sachlich: "leider kann ich den Termin am {wann} nicht wahrnehmen. Wäre eine Verschiebung auf {neu} möglich? Andere Vorschläge nehme ich gerne entgegen.",
+        bestimmt: "den Termin am {wann} kann ich nicht wahrnehmen. Ich schlage {neu} vor und bitte um kurze Rückmeldung, ob das passt."
+      }
+    },
+    {
+      id: "absage-einladung", cat: "Absagen & Verschieben", title: "Einladung absagen",
+      betreff: "Absage {was}",
+      fields: [
+        { key: "was", gap: "Anlass", label: "Wozu wurdest du eingeladen?", ph: "Grillen am Samstag" },
+        { key: "grund", label: "Grund (optional)", ph: "bin da schon verplant", optional: true }
+      ],
+      core: {
+        locker: "schade, aber ich schaff’s leider nicht zu {was}{grundLocker}. Wünsch euch viel Spaß! Beim nächsten Mal bin ich dabei.",
+        sachlich: "vielen Dank für die Einladung zu {was}. Leider kann ich nicht kommen{grundSachlich}. Ich wünsche euch einen schönen Tag.",
+        bestimmt: "danke für die Einladung zu {was} — ich kann leider nicht teilnehmen."
+      }
+    },
+    {
+      id: "kurzfristig", cat: "Absagen & Verschieben", title: "Kurzfristig absagen (heute)",
+      betreff: "Kurzfristige Absage heute",
+      fields: [
+        { key: "was", gap: "was ausfällt", label: "Was fällt aus?", ph: "unser Treffen heute Abend" },
+        { key: "grund", label: "Grund (optional)", ph: "bin krank geworden", optional: true }
+      ],
+      core: {
+        locker: "sorry, ganz kurzfristig: {was} schaffe ich heute leider nicht{grundLocker}. Echt blöd, ich melde mich morgen bei dir!",
+        sachlich: "leider muss ich {was} heute sehr kurzfristig absagen{grundSachlich}. Das tut mir aufrichtig leid — ich melde mich zeitnah wegen eines neuen Termins.",
+        bestimmt: "{was} muss ich heute kurzfristig absagen{grundSachlich}. Ich melde mich morgen wegen eines Ersatztermins."
+      }
+    },
+
+    // ---------- Nachhaken ----------
+    {
+      id: "erinnern", cat: "Nachhaken", title: "An Antwort erinnern",
+      betreff: "Nachfrage: {was}",
+      fields: [
+        { key: "was", gap: "Thema", label: "Worum ging es?", ph: "meine Anfrage vom 3. März" }
+      ],
+      core: {
+        locker: "kurze Erinnerung wegen {was} — hast du da schon was rausfinden können? Kein Stress, wollte nur mal nachhaken.",
+        sachlich: "ich komme noch einmal auf {was} zurück. Da ich bisher keine Rückmeldung erhalten habe, wollte ich freundlich nachfragen, wie der aktuelle Stand ist.",
+        bestimmt: "auf {was} habe ich bislang keine Antwort erhalten. Ich bitte um Rückmeldung bis Ende der Woche."
+      }
+    },
+    {
+      id: "stand", cat: "Nachhaken", title: "Nach dem Stand fragen",
+      betreff: "Stand der Bearbeitung: {was}",
+      fields: [
+        { key: "was", gap: "Thema", label: "Worum geht es?", ph: "meinen Antrag / meine Reparatur" },
+        { key: "seit", label: "Seit wann? (optional)", ph: "seit drei Wochen", optional: true }
+      ],
+      core: {
+        locker: "wie sieht’s eigentlich mit {was} aus? Wollte nur mal fragen, wie weit ihr seid.",
+        sachlich: "ich wollte mich nach dem aktuellen Bearbeitungsstand erkundigen: {was}.{seitSachlich} Können Sie mir sagen, wann ich mit einem Ergebnis rechnen kann?",
+        bestimmt: "ich bitte um Auskunft zum Bearbeitungsstand: {was}.{seitSachlich} Bitte teilen Sie mir mit, bis wann die Bearbeitung abgeschlossen ist."
+      }
+    },
+    {
+      id: "geld", cat: "Nachhaken", title: "An geliehenes Geld erinnern",
+      betreff: "Offener Betrag",
+      fields: [
+        { key: "betrag", gap: "Betrag", label: "Betrag", ph: "20 €" },
+        { key: "wofuer", label: "Wofür? (optional)", ph: "vom Essen letzte Woche", optional: true }
+      ],
+      core: {
+        locker: "sag mal, denkst du noch an die {betrag}{wofuerLocker}? Kein Stress, wollt’s nur nicht vergessen.",
+        sachlich: "ich wollte kurz an die {betrag}{wofuerLocker} erinnern. Kannst du mir die bei Gelegenheit überweisen?",
+        bestimmt: "die {betrag}{wofuerLocker} sind noch offen. Bitte überweise den Betrag bis Ende der Woche."
+      }
+    },
+    {
+      id: "bewerbung-nachfrage", cat: "Nachhaken", title: "Nach Bewerbung nachfragen",
+      betreff: "Nachfrage zu meiner Bewerbung als {stelle}",
+      fields: [
+        { key: "stelle", gap: "Stelle", label: "Stelle", ph: "Lagermitarbeiter" },
+        { key: "wann", label: "Beworben am (optional)", ph: "12. März", optional: true }
+      ],
+      core: {
+        locker: "ich hatte mich bei euch als {stelle} beworben{wannSachlich} und wollte fragen, ob es dazu schon was Neues gibt.",
+        sachlich: "ich habe mich bei Ihnen als {stelle} beworben{wannSachlich}. Da ich sehr an der Stelle interessiert bin, wollte ich nachfragen, wie der Stand des Verfahrens ist.",
+        bestimmt: "ich habe mich als {stelle} beworben{wannSachlich} und bisher keine Rückmeldung erhalten. Ich bitte um eine kurze Information zum Stand meiner Bewerbung."
+      }
+    },
+
+    // ---------- Termin & Organisation ----------
+    {
+      id: "termin-vorschlagen", cat: "Termin & Organisation", title: "Termin vorschlagen",
+      betreff: "Terminvorschlag: {was}",
+      fields: [
+        { key: "was", gap: "Thema", label: "Worum geht es?", ph: "ein kurzes Gespräch" },
+        { key: "wann", gap: "Zeitvorschlag", label: "Dein Vorschlag", ph: "Dienstag oder Mittwoch nachmittags" }
+      ],
+      core: {
+        locker: "hättest du Zeit für {was}? {wann} würde mir gut passen — sag einfach, was bei dir geht.",
+        sachlich: "ich würde gerne einen Termin für {was} vereinbaren. {wann} würde mir gut passen. Nennen Sie mir gerne eine Alternative, falls das nicht möglich ist.",
+        bestimmt: "ich bitte um einen Termin für {was}. Ich schlage {wann} vor und bitte um Bestätigung."
+      }
+    },
+    {
+      id: "rueckruf", cat: "Termin & Organisation", title: "Um Rückruf bitten",
+      betreff: "Bitte um Rückruf",
+      fields: [
+        { key: "was", gap: "Thema", label: "Worum geht es?", ph: "meinen Vertrag" },
+        { key: "wann", gap: "Erreichbarkeit", label: "Wann erreichbar?", ph: "werktags ab 16 Uhr" }
+      ],
+      core: {
+        locker: "kannst du mich mal kurz anrufen wegen {was}? Ich bin {wann} erreichbar.",
+        sachlich: "ich habe eine Frage zu {was} und würde das gerne telefonisch klären. Sie erreichen mich {wann}. Über einen Rückruf würde ich mich freuen.",
+        bestimmt: "ich bitte um einen Rückruf wegen {was}. Ich bin {wann} erreichbar."
+      }
+    },
+    {
+      id: "termin-erbitten", cat: "Termin & Organisation", title: "Um Termin bitten (Arzt, Amt, Werkstatt)",
+      betreff: "Terminanfrage",
+      fields: [
+        { key: "was", gap: "Anliegen", label: "Wofür?", ph: "einen Kontrolltermin" },
+        { key: "wann", label: "Wann passt dir? (optional)", ph: "am liebsten vormittags", optional: true }
+      ],
+      core: {
+        locker: "ich bräuchte {was} — habt ihr da was frei? {wannLocker}",
+        sachlich: "ich möchte gerne {was} vereinbaren.{wannSatz} Bitte teilen Sie mir mit, welche Termine bei Ihnen möglich sind.",
+        bestimmt: "ich benötige {was}.{wannSatz} Bitte nennen Sie mir kurzfristig einen möglichen Termin."
+      }
+    },
+
+    // ---------- Reklamation & Vertrag ----------
+    {
+      id: "reklamation", cat: "Reklamation & Vertrag", title: "Etwas reklamieren",
+      betreff: "Reklamation: {was}",
+      fields: [
+        { key: "was", gap: "Problem", label: "Was ist das Problem?", ph: "die gelieferte Lampe ist beschädigt" },
+        { key: "nummer", label: "Bestell-/Kundennummer (optional)", ph: "12345", optional: true }
+      ],
+      core: {
+        locker: "bei mir gibt’s ein Problem: {was}.{nummerSatz} Wie kriegen wir das geregelt?",
+        sachlich: "ich muss leider reklamieren: {was}.{nummerSatz} Bitte teilen Sie mir mit, wie wir weiter verfahren — ich bitte um Ersatz oder Erstattung.",
+        bestimmt: "ich reklamiere hiermit: {was}.{nummerSatz} Ich fordere Sie auf, innerhalb von 14 Tagen Ersatz zu liefern oder den Kaufpreis zu erstatten."
+      }
+    },
+    {
+      id: "rechnung", cat: "Reklamation & Vertrag", title: "Rechnung stimmt nicht",
+      betreff: "Einspruch gegen Rechnung {nummer}",
+      fields: [
+        { key: "nummer", gap: "Rechnungsnummer", label: "Rechnungsnummer", ph: "R-2024-88" },
+        { key: "was", gap: "Problem", label: "Was stimmt nicht?", ph: "mir wurden 3 Stück berechnet, geliefert wurden 2" }
+      ],
+      core: {
+        locker: "bei der Rechnung {nummer} stimmt was nicht: {was}. Könnt ihr das bitte korrigieren?",
+        sachlich: "die Rechnung {nummer} weist aus meiner Sicht einen Fehler auf: {was}. Ich bitte Sie, den Betrag zu prüfen und mir eine korrigierte Rechnung zukommen zu lassen.",
+        bestimmt: "gegen die Rechnung {nummer} lege ich Einspruch ein: {was}. Bis zur Klärung werde ich den strittigen Betrag nicht zahlen. Ich bitte um eine korrigierte Rechnung innerhalb von 14 Tagen."
+      }
+    },
+    {
+      id: "kuendigung", cat: "Reklamation & Vertrag", title: "Vertrag kündigen",
+      betreff: "Kündigung {vertrag}{nummerBetreff}",
+      fields: [
+        { key: "vertrag", gap: "Vertrag", label: "Welcher Vertrag?", ph: "Fitnessstudio-Mitgliedschaft" },
+        { key: "nummer", label: "Kundennummer (optional)", ph: "998877", optional: true }
+      ],
+      core: {
+        locker: "ich möchte meinen Vertrag ({vertrag}) kündigen{nummerKurz}. Könnt ihr mir das bitte bestätigen?",
+        sachlich: "hiermit kündige ich meinen Vertrag {vertrag}{nummerKurz} fristgerecht zum nächstmöglichen Zeitpunkt. Bitte bestätigen Sie mir den Eingang der Kündigung sowie das Vertragsende schriftlich.",
+        bestimmt: "hiermit kündige ich den Vertrag {vertrag}{nummerKurz} fristgerecht zum nächstmöglichen Termin. Ich fordere Sie auf, mir den Erhalt dieser Kündigung und das genaue Vertragsende innerhalb von 14 Tagen schriftlich zu bestätigen."
+      }
+    },
+    {
+      id: "frist", cat: "Reklamation & Vertrag", title: "Frist setzen (letzte Aufforderung)",
+      betreff: "Letzte Aufforderung: {was}",
+      fields: [
+        { key: "was", gap: "Thema", label: "Worum geht es?", ph: "die ausstehende Rückerstattung" },
+        { key: "frist", gap: "Datum", label: "Bis wann?", ph: "30. April" }
+      ],
+      core: {
+        locker: "ich hake jetzt zum letzten Mal wegen {was} nach. Bis {frist} sollte das erledigt sein, sonst muss ich mir was anderes überlegen.",
+        sachlich: "trotz mehrfacher Nachfrage ist {was} weiterhin offen. Ich setze Ihnen hiermit eine Frist bis zum {frist} und bitte um Erledigung bis zu diesem Datum.",
+        bestimmt: "trotz mehrfacher Aufforderung ist {was} bis heute nicht erledigt. Ich setze Ihnen eine letzte Frist bis zum {frist}. Sollte bis dahin keine Erledigung erfolgen, behalte ich mir weitere Schritte vor."
+      }
+    },
+
+    // ---------- Arbeit ----------
+    {
+      id: "krank", cat: "Arbeit", title: "Krankmeldung",
+      betreff: "Krankmeldung",
+      fields: [
+        { key: "dauer", gap: "Dauer", label: "Voraussichtlich wie lange?", ph: "heute und morgen" },
+        { key: "vertretung", label: "Wer übernimmt? (optional)", ph: "Sabine kümmert sich um die Kasse", optional: true }
+      ],
+      core: {
+        locker: "ich bin krank und schaff’s heute leider nicht. Voraussichtlich falle ich {dauer} aus.{vertretungSatz} Melde mich, sobald es besser wird.",
+        sachlich: "ich bin erkrankt und kann heute leider nicht zur Arbeit kommen. Voraussichtlich werde ich {dauer} ausfallen.{vertretungSatz} Eine Arbeitsunfähigkeitsbescheinigung reiche ich nach.",
+        bestimmt: "ich melde mich hiermit krank. Voraussichtliche Dauer: {dauer}.{vertretungSatz} Die Arbeitsunfähigkeitsbescheinigung reiche ich fristgerecht nach."
+      }
+    },
+    {
+      id: "urlaub", cat: "Arbeit", title: "Urlaub beantragen",
+      betreff: "Urlaubsantrag {zeitraum}",
+      fields: [
+        { key: "zeitraum", gap: "Zeitraum", label: "Zeitraum", ph: "12. bis 23. Juli" },
+        { key: "vertretung", label: "Vertretung (optional)", ph: "Markus übernimmt", optional: true }
+      ],
+      core: {
+        locker: "ich würde gern vom {zeitraum} Urlaub nehmen.{vertretungSatz} Geht das klar?",
+        sachlich: "ich möchte für den Zeitraum {zeitraum} Urlaub beantragen.{vertretungSatz} Über eine kurze Bestätigung würde ich mich freuen.",
+        bestimmt: "hiermit beantrage ich Urlaub für den Zeitraum {zeitraum}.{vertretungSatz} Ich bitte um Bestätigung."
+      }
+    },
+
+    // ---------- Privat ----------
+    {
+      id: "gefallen", cat: "Privat", title: "Um einen Gefallen bitten",
+      betreff: "Kurze Bitte",
+      fields: [
+        { key: "was", gap: "Bitte", label: "Worum bittest du?", ph: "mir am Samstag beim Umzug zu helfen" },
+        { key: "wann", label: "Wann? (optional)", ph: "Samstag ab 10 Uhr", optional: true }
+      ],
+      core: {
+        locker: "hättest du Lust und Zeit, {was}?{wannLockerSatz} Wäre mir echt eine große Hilfe — sag ruhig ab, wenn’s nicht passt.",
+        sachlich: "ich wollte fragen, ob du mir helfen könntest, {was}.{wannLockerSatz} Ich würde mich sehr freuen, aber sag gern Bescheid, falls es nicht passt.",
+        bestimmt: "ich brauche Unterstützung: {was}.{wannLockerSatz} Kannst du das übernehmen?"
+      }
+    },
+    {
+      id: "entschuldigen", cat: "Privat", title: "Sich entschuldigen",
+      betreff: "Entschuldigung",
+      fields: [
+        { key: "was", gap: "Anlass", label: "Wofür?", ph: "dass ich mich so lange nicht gemeldet habe" }
+      ],
+      core: {
+        locker: "sorry wegen {was} — das war blöd von mir. Ich hoffe, du bist mir nicht böse.",
+        sachlich: "ich möchte mich für {was} entschuldigen. Das tut mir wirklich leid, und ich werde versuchen, es künftig besser zu machen.",
+        bestimmt: "für {was} möchte ich mich entschuldigen. Das war mein Fehler, und ich stehe dafür gerade."
+      }
+    }
+  ];
+  var GAP = "\u0001"; // unsichtbarer Marker: unabhaengig von Leerzeichen-Bereinigung
+
+  var msg = { channel: "whatsapp", tone: "sachlich", tplId: null, values: {}, context: null };
+
+  var catsEl = document.getElementById("cats");
+  var msgFieldsEl = document.getElementById("fields");
+  var searchEl = document.getElementById("search");
+  var resultBody = document.getElementById("resultBody");
+  var resultKind = document.getElementById("resultKind");
+  var copyBtn = document.getElementById("copyBtn");
+  var contextEl = document.getElementById("context");
+  var contextText = document.getElementById("contextText");
+
+  function tplById(id) { return TEMPLATES.find(function (t) { return t.id === id; }); }
+
+  function val(key) {
+    var v = (msg.values[key] || "").trim();
+    return v;
+  }
+
+  // Feldwert oder sichtbarer Platzhalter
+  function slot(key, gapLabel) {
+    var v = val(key);
+    return v ? v : GAP + (gapLabel || key) + GAP;
+  }
+
+  function greeting() {
+    var name = val("empfaenger");
+    if (msg.channel === "whatsapp") {
+      if (msg.tone === "locker") return name ? "Hey " + name + "," : "Hey,";
+      return name ? "Hallo " + name + "," : "Hallo,";
+    }
+    // E-Mail
+    if (msg.tone === "locker") return name ? "Hallo " + name + "," : "Hallo,";
+    if (msg.tone === "sachlich") return name ? "Guten Tag " + name + "," : "Guten Tag,";
+    if (!name) return "Sehr geehrte Damen und Herren,";
+    if (/^frau\b/i.test(name)) return "Sehr geehrte " + name + ",";
+    if (/^herr\b/i.test(name)) return "Sehr geehrter " + name + ",";
+    return "Sehr geehrte/r " + name + ",";
+  }
+
+  function signoff() {
+    var ich = val("ich");
+    if (msg.channel === "whatsapp") {
+      if (msg.tone === "locker") return ich ? "Danke dir!\n" + ich : "Danke dir!";
+      if (msg.tone === "sachlich") return ich ? "Viele Grüße\n" + ich : "Viele Grüße";
+      return ich ? "Viele Grüße\n" + ich : "Viele Grüße";
+    }
+    if (msg.tone === "locker") return "Viele Grüße\n" + (ich || GAP + "dein Name" + GAP);
+    return "Mit freundlichen Grüßen\n" + (ich || GAP + "dein Name" + GAP);
+  }
+
+  // Optionale Halbsätze, die nur erscheinen, wenn das Feld gefüllt ist.
+  function derived(tpl) {
+    var d = {};
+    var grund = val("grund");
+    d.grundLocker = grund ? ", " + grund : "";
+    d.grundSachlich = grund ? " (" + grund + ")" : "";
+
+    var seit = val("seit");
+    // Kein Relativpronomen: das Geschlecht des eingetippten Begriffs ist unbekannt.
+    d.seitSachlich = seit ? " Der Vorgang läuft " + seit + "." : "";
+
+    var wofuer = val("wofuer");
+    d.wofuerLocker = wofuer ? " " + wofuer : "";
+
+    var wann = val("wann");
+    d.wannLocker = wann ? "Mir würde passen: " + wann + "." : "";
+    d.wannSatz = wann ? " Mir würde passen: " + wann + "." : "";
+    d.wannLockerSatz = wann ? " (" + wann + ")" : "";
+    d.wannSachlich = wann ? " am " + wann : "";
+
+    var nummer = val("nummer");
+    d.nummerSatz = nummer ? " Bestell-/Kundennummer: " + nummer + "." : "";
+    d.nummerKurz = nummer ? " (Kundennummer " + nummer + ")" : "";
+    d.nummerBetreff = nummer ? " – Kundennummer " + nummer : "";
+
+    var vertretung = val("vertretung");
+    d.vertretungSatz = vertretung ? " " + vertretung + "." : "";
+
+    return d;
+  }
+
+  function fill(text, tpl) {
+    var d = derived(tpl);
+    return text.replace(/\{(\w+)\}/g, function (m, key) {
+      if (key in d) return d[key];
+      var f = (tpl.fields || []).find(function (x) { return x.key === key; });
+      if (f) return slot(key, f.gap || f.label);
+      return slot(key, key);
+    });
+  }
+
+  function buildMessage(tpl) {
+    var core = fill(tpl.core[msg.tone], tpl);
+    var body = greeting() + "\n\n" + core + "\n\n" + signoff();
+    // Doppelte Leerzeichen aus weggefallenen Halbsätzen aufräumen.
+    body = body.replace(/ {2,}/g, " ").replace(/ \./g, ".").replace(/ ,/g, ",");
+    body = body.split("\n").map(function (l) { return l.replace(/\s+$/, ""); }).join("\n");
+    var betreff = msg.channel === "mail" ? fill(tpl.betreff, tpl) : null;
+    if (betreff) betreff = betreff.replace(/ {2,}/g, " ").trim();
+    return { body: body, betreff: betreff };
+  }
+
+  function renderGaps(text) {
+    var parts = text.split(GAP);
+    var out = "";
+    for (var i = 0; i < parts.length; i++) {
+      out += i % 2 === 1
+        ? '<span class="gap">' + esc(parts[i]) + "</span>"
+        : esc(parts[i]);
+    }
+    return out;
+  }
+
+  function plainText(text) {
+    return text.split(GAP).map(function (p, i) {
+      return i % 2 === 1 ? "[" + p + "]" : p;
+    }).join("");
+  }
+
+
+  function renderCats() {
+    var q = searchEl.value.trim().toLowerCase();
+    var list = TEMPLATES.filter(function (t) {
+      if (!q) return true;
+      return (t.title + " " + t.cat).toLowerCase().indexOf(q) !== -1;
+    });
+
+    if (!list.length) {
+      catsEl.innerHTML = '<div class="noresult">Nichts gefunden. Beschreib mir die Situation im Chat — dann schreibe ich dir den Text direkt.</div>';
+      return;
+    }
+
+    var byCat = {}, order = [];
+    list.forEach(function (t) {
+      if (!byCat[t.cat]) { byCat[t.cat] = []; order.push(t.cat); }
+      byCat[t.cat].push(t);
+    });
+
+    catsEl.innerHTML = order.map(function (cat) {
+      return '<div class="cat"><div class="cat__name">' + esc(cat) + "</div>" +
+        '<div class="cat__items">' +
+        byCat[cat].map(function (t) {
+          return '<button class="tpl" type="button" data-tpl="' + t.id + '" aria-pressed="' +
+            (msg.tplId === t.id ? "true" : "false") + '">' + esc(t.title) + "</button>";
+        }).join("") + "</div></div>";
+    }).join("");
+  }
+
+  function renderMsgFields() {
+    var tpl = tplById(msg.tplId);
+    if (!tpl) { msgFieldsEl.style.display = "none"; return; }
+    var common = [
+      { key: "empfaenger", label: "An wen? (optional)", ph: "Frau Meier / Tom", optional: true },
+      { key: "ich", label: "Dein Name (optional)", ph: "Kaspar", optional: true }
+    ];
+    var all = tpl.fields.concat(common);
+    msgFieldsEl.style.display = "grid";
+    msgFieldsEl.innerHTML = all.map(function (f) {
+      return '<label class="field"><span class="field__label">' + esc(f.label) + "</span>" +
+        '<input class="field__input" type="text" data-field="' + f.key + '" placeholder="' +
+        esc(f.ph) + '" value="' + esc(msg.values[f.key] || "") + '" /></label>';
+    }).join("");
+  }
+
+  function renderResult() {
+    var tpl = tplById(msg.tplId);
+    if (!tpl) {
+      resultKind.textContent = "Vorschau";
+      copyBtn.disabled = true;
+      resultBody.innerHTML = '<div class="result__empty">Wähl eine Situation — der fertige Text steht sofort hier.</div>';
+      return;
+    }
+    var m = buildMessage(tpl);
+    resultKind.textContent = msg.channel === "mail" ? "E-Mail" : "WhatsApp";
+    copyBtn.disabled = false;
+    resultBody.innerHTML =
+      (m.betreff ? '<div class="result__betreff">Betreff: <b>' + renderGaps(m.betreff) + "</b></div>" : "") +
+      '<p class="result__text">' + renderGaps(m.body) + "</p>";
+  }
+
+  function renderContext() {
+    if (msg.context) {
+      contextEl.style.display = "flex";
+      contextText.textContent = msg.context;
+    } else {
+      contextEl.style.display = "none";
+    }
+  }
+
+  function renderMsgAll() { renderCats(); renderMsgFields(); renderResult(); renderContext(); }
+
+  document.getElementById("channelSeg").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-channel]"); if (!b) return;
+    msg.channel = b.dataset.channel;
+    this.querySelectorAll("[data-channel]").forEach(function (x) {
+      x.setAttribute("aria-pressed", x === b ? "true" : "false");
+    });
+    renderResult();
+  });
+
+  document.getElementById("toneSeg").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-tone]"); if (!b) return;
+    msg.tone = b.dataset.tone;
+    this.querySelectorAll("[data-tone]").forEach(function (x) {
+      x.setAttribute("aria-pressed", x === b ? "true" : "false");
+    });
+    renderResult();
+  });
+
+  catsEl.addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-tpl]"); if (!b) return;
+    msg.tplId = b.dataset.tpl;
+    // Aus einer Aufgabe heraus: erstes Feld mit dem Aufgabentext vorbelegen.
+    var tpl = tplById(msg.tplId);
+    if (msg.context && tpl && tpl.fields.length) {
+      var first = tpl.fields[0].key;
+      if (!(msg.values[first] || "").trim()) msg.values[first] = msg.context;
+    }
+    renderMsgAll();
+  });
+
+  msgFieldsEl.addEventListener("input", function (ev) {
+    var f = ev.target.closest("[data-field]"); if (!f) return;
+    msg.values[f.dataset.field] = f.value;
+    renderResult();
+  });
+
+  searchEl.addEventListener("input", renderCats);
+
+  document.getElementById("contextClear").addEventListener("click", function () {
+    msg.context = null;
+    renderContext();
+  });
+
+  copyBtn.addEventListener("click", function () {
+    var tpl = tplById(msg.tplId); if (!tpl) return;
+    var m = buildMessage(tpl);
+    var text = (m.betreff ? "Betreff: " + plainText(m.betreff) + "\n\n" : "") + plainText(m.body);
+    var original = copyBtn.textContent;
+    function done(ok) {
+      copyBtn.textContent = ok ? "Kopiert" : "Nicht kopiert";
+      setTimeout(function () { copyBtn.textContent = original; }, 1300);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+    } else { done(false); }
+  });
+
+  /* ======================= Reiter ======================= */
+
+  var tabFristen = document.getElementById("tabFristen");
+  var tabTexte = document.getElementById("tabTexte");
+  var paneFristen = document.getElementById("paneFristen");
+  var paneTexte = document.getElementById("paneTexte");
+
+  function showTab(which) {
+    var texte = which === "texte";
+    tabFristen.setAttribute("aria-selected", texte ? "false" : "true");
+    tabTexte.setAttribute("aria-selected", texte ? "true" : "false");
+    paneFristen.classList.toggle("is-active", !texte);
+    paneTexte.classList.toggle("is-active", texte);
+  }
+
+  tabFristen.addEventListener("click", function () { showTab("fristen"); });
+  tabTexte.addEventListener("click", function () { showTab("texte"); });
+
+  // Von einer Aufgabe zum Textbaukasten springen
+  function writeFor(item) {
+    var bits = [];
+    if (item.subject) bits.push(item.subject);
+    if (item.text) bits.push(item.text);
+    msg.context = bits.join(": ");
+    msg.tplId = null;
+    msg.values = {};
+    showTab("texte");
+    renderMsgAll();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  renderMsgAll();
+
+  refreshPreview();
+  render();
+})();
+</script>
+
+<script>
+// Service Worker registrieren: ermoeglicht Offline-Betrieb und die Installation.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
