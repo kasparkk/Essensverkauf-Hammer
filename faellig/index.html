@@ -961,6 +961,32 @@
 
   @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
 
+  .backup + .backup { margin-top: 10px; }
+
+  .backup__check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.83rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+
+  .backup__check input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+
+  .backup__sel {
+    font: inherit;
+    font-size: 0.83rem;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 5px 8px;
+    cursor: pointer;
+  }
+
+  .backup__sel:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
   /* ---------- Notizen ---------- */
 
   .noteadd { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -1294,6 +1320,38 @@
         </div>
       </div>
 
+    </div>
+  </details>
+
+  <details class="backup" id="kalender">
+    <summary>Fristen in den Kalender</summary>
+    <div class="backup__body">
+      <div class="backup__block">
+        <span class="backup__hint">
+          Macht aus deinen Fristen eine Kalender-Datei. Die importierst du einmal in
+          Google Kalender, Apple Kalender oder Outlook &mdash; ab da erinnert dich der Kalender,
+          auch wenn du hier nicht reinschaust. Es ist eine Kopie, keine dauerhafte Verbindung:
+          &auml;nderst du sp&auml;ter ein Datum, musst du neu exportieren.
+        </span>
+        <label class="backup__check">
+          <input type="checkbox" id="icsAbos" />
+          <span>Abbuchungen der Abos mitnehmen</span>
+        </label>
+        <label class="backup__check">
+          <span>Erinnerung:</span>
+          <select id="icsAlarm" class="backup__sel">
+            <option value="1tag">einen Tag vorher, 9 Uhr</option>
+            <option value="2tage">zwei Tage vorher, 9 Uhr</option>
+            <option value="tag">am selben Tag, 9 Uhr</option>
+            <option value="aus">keine</option>
+          </select>
+        </label>
+        <div class="backup__row">
+          <button class="btn btn--primary" id="icsFile" type="button">Kalender-Datei erstellen</button>
+          <span class="backup__msg" id="icsMsg"></span>
+        </div>
+        <textarea id="icsText" readonly hidden aria-label="Kalender-Daten zum Kopieren"></textarea>
+      </div>
     </div>
   </details>
 
@@ -3361,19 +3419,20 @@
     } catch (e) { return false; }
   }
 
-  function ohneDateiHinweis() {
-    meldung(expMsgEl, "Als Datei geht hier nicht \u2014 nimm \u201eText kopieren\u201c.", false);
-  }
+  // Eine Datei anbieten \u2014 auf dem Weg, der hier gerade funktioniert.
+  //
+  // In der Claude-Ansicht laeuft das ueber die eingebaute Speicherfunktion.
+  // Der normale Browser-Download ist dort abgeschaltet und tut ohne Fehler
+  // einfach nichts \u2014 er wuerde also faelschlich Erfolg melden. Deshalb wird
+  // er dort gar nicht erst versucht.
+  //
+  // opt.ersatzName: Endung, die genommen wird, wenn die eigentliche nicht
+  // erlaubt ist (die Claude-Ansicht laesst nur bestimmte Endungen durch).
+  // opt.beiFehler: laeuft, wenn kein Weg geklappt hat.
+  function dateiAnbieten(name, text, msgEl, opt) {
+    opt = opt || {};
+    meldung(msgEl, "");
 
-  document.getElementById("expFile").addEventListener("click", function () {
-    expFuellen();
-    var text = expTextEl.value;
-    var name = sicherungsName();
-    meldung(expMsgEl, "");
-
-    // In der Claude-Ansicht laeuft Speichern ueber die eingebaute Funktion.
-    // Der normale Browser-Download ist dort abgeschaltet \u2014 er wuerde ohne
-    // Fehler nichts tun. Deshalb wird er nur ausserhalb ueberhaupt versucht.
     var imClaude = false;
     var zugriff = null;
     try {
@@ -3383,24 +3442,48 @@
       }
     } catch (e) { zugriff = null; }
 
+    function gelungen(wirklicherName, hinweis) {
+      meldung(msgEl, "Gespeichert als " + wirklicherName + "." + (hinweis ? " " + hinweis : ""), true);
+    }
+
+    function gescheitert() {
+      if (opt.beiFehler) opt.beiFehler();
+      else meldung(msgEl, "Als Datei geht hier nicht \u2014 nimm \u201eText kopieren\u201c.", false);
+    }
+
     function normalerWeg() {
-      if (!imClaude && blobSpeichern(name, text)) meldung(expMsgEl, "Gespeichert als " + name + ".", true);
-      else ohneDateiHinweis();
+      if (!imClaude && blobSpeichern(name, text)) gelungen(name);
+      else gescheitert();
     }
 
     if (!zugriff) { normalerWeg(); return; }
 
     Promise.resolve(zugriff).then(function (dl) {
       if (!dl || typeof dl.save !== "function") { normalerWeg(); return; }
-      return dl.save({ filename: name, data: text }).then(function () {
-        meldung(expMsgEl, "Gespeichert als " + name + ".", true);
-      }, function (err) {
-        var code = err && err.code;
-        if (code === "declined") { meldung(expMsgEl, "Abgebrochen.", false); return; }
-        if (code === "rate_limited") { meldung(expMsgEl, "Kurz warten und nochmal tippen.", false); return; }
-        normalerWeg();
-      });
+
+      function versuch(dieserName, istErsatz) {
+        return dl.save({ filename: dieserName, data: text }).then(function () {
+          gelungen(dieserName, istErsatz ? opt.ersatzHinweis : "");
+        }, function (err) {
+          var code = err && err.code;
+          if (code === "declined") { meldung(msgEl, "Abgebrochen.", false); return; }
+          if (code === "rate_limited") { meldung(msgEl, "Kurz warten und nochmal tippen.", false); return; }
+          // Endung nicht erlaubt: einmal mit der Ersatz-Endung probieren.
+          if (!istErsatz && opt.ersatzName &&
+              (code === "rejected_extension" || code === "extension_not_enabled")) {
+            return versuch(opt.ersatzName, true);
+          }
+          normalerWeg();
+        });
+      }
+
+      return versuch(name, false);
     })["catch"](function () { normalerWeg(); });
+  }
+
+  document.getElementById("expFile").addEventListener("click", function () {
+    expFuellen();
+    dateiAnbieten(sicherungsName(), expTextEl.value, expMsgEl);
   });
 
   document.getElementById("expCopy").addEventListener("click", function () {
@@ -3594,6 +3677,209 @@
   });
 
   expFuellen();
+
+
+  /* ======================= Fristen in den Kalender ======================= */
+
+  var icsMsgEl = document.getElementById("icsMsg");
+  var icsTextEl = document.getElementById("icsText");
+  var icsAbosEl = document.getElementById("icsAbos");
+  var icsAlarmEl = document.getElementById("icsAlarm");
+
+  // Erinnerung relativ zum Terminbeginn. Ein ganztaegiger Termin beginnt um
+  // 0 Uhr — minus 15 Stunden ist also 9 Uhr am Vortag.
+  var ALARME = {
+    "1tag": "-PT15H",
+    "2tage": "-PT39H",
+    "tag": "PT9H",
+    "aus": null,
+  };
+
+  var textkodierer = (typeof TextEncoder !== "undefined") ? new TextEncoder() : null;
+
+  function oktette(str) {
+    return textkodierer ? textkodierer.encode(str).length : str.length;
+  }
+
+  function icsText(v) {
+    return String(v)
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\r?\n/g, "\\n");
+  }
+
+  // Kalenderdateien duerfen hoechstens 75 Zeichen pro Zeile haben; laengere
+  // werden umgebrochen und mit einem Leerzeichen fortgesetzt. Gezaehlt wird
+  // in Bytes, und Umlaute zaehlen doppelt.
+  function icsFalten(zeile) {
+    var zeichen = Array.from ? Array.from(zeile) : zeile.split("");
+    var fertig = "", puffer = "", bytes = 0, grenze = 74;
+    for (var i = 0; i < zeichen.length; i++) {
+      var b = oktette(zeichen[i]);
+      if (bytes + b > grenze) {
+        fertig += puffer + "\r\n ";
+        puffer = ""; bytes = 0; grenze = 73;
+      }
+      puffer += zeichen[i];
+      bytes += b;
+    }
+    return fertig + puffer;
+  }
+
+  function icsZeitstempel(d) {
+    function zz(n) { return (n < 10 ? "0" : "") + n; }
+    return d.getUTCFullYear() + zz(d.getUTCMonth() + 1) + zz(d.getUTCDate()) + "T" +
+           zz(d.getUTCHours()) + zz(d.getUTCMinutes()) + zz(d.getUTCSeconds()) + "Z";
+  }
+
+  function icsTag(key) { return key.replace(/-/g, ""); }
+
+  function kalenderEintraege(mitAbos) {
+    return items.filter(function (i) {
+      if (!i.dueKey) return false;          // To-dos ohne Datum gehoeren nicht in den Kalender
+      if (i.done && !i.repeat) return false; // Erledigtes auch nicht
+      return mitAbos || !isAbo(i);
+    });
+  }
+
+  var ICS_DURCHGAENGE = 24;
+
+  // Entweder eine Wiederholungsregel, die der Kalender selbst versteht, oder
+  // — wo die Regel anders rechnen wuerde als die App — einzeln aufgezaehlte Termine.
+  function terminReihe(item) {
+    var rep = item.repeat;
+    if (!rep) return { keys: [item.dueKey], rrule: null };
+
+    var n = rep.n || 1;
+    var start = fromKey(item.dueKey);
+    var anker = rep.tag || start.getDate();
+
+    // Die App rutscht am Monatsende auf den letzten Tag ("31." wird im Februar
+    // zum 28."). Eine Kalenderregel wuerde solche Monate stattdessen ueberspringen.
+    var einzeln = (rep.unit === "month" && anker > 28) ||
+                  (rep.unit === "year" && start.getMonth() === 1 && anker === 29);
+
+    if (einzeln) {
+      var keys = [], d = start;
+      for (var k = 0; k < ICS_DURCHGAENGE; k++) {
+        keys.push(toKey(d));
+        d = rep.unit === "month" ? addMonthsAnchored(d, n, anker) : addYearsAnchored(d, n, anker);
+      }
+      return { keys: keys, rrule: null };
+    }
+
+    var freq = rep.unit === "day" ? "DAILY"
+      : rep.unit === "week" ? "WEEKLY"
+      : rep.unit === "month" ? "MONTHLY" : "YEARLY";
+    return { keys: [item.dueKey], rrule: "FREQ=" + freq + (n > 1 ? ";INTERVAL=" + n : "") };
+  }
+
+  function kalenderTitel(item) {
+    var t = (item.subject ? item.subject + ": " : "") + (item.text || "");
+    if (item.amountCents) t += " (" + formatCents(item.amountCents) + ")";
+    return t.trim();
+  }
+
+  function icsBauen(mitAbos, alarmId) {
+    var liste = kalenderEintraege(mitAbos);
+    if (!liste.length) return null;
+
+    // Hoehere Nummer bei jedem Export: ein zweiter Import gilt dann als
+    // Aktualisierung derselben Termine, nicht als neue.
+    var folge = (typeof settings.icsFolge === "number" ? settings.icsFolge : 0) + 1;
+    settings.icsFolge = folge;
+    saveSettings(settings);
+
+    var stempel = icsZeitstempel(new Date());
+    var alarm = ALARME[alarmId] || null;
+
+    var z = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Faellig//Fristen//DE",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "X-WR-CALNAME:Fällig",
+    ];
+
+    liste.forEach(function (item) {
+      var reihe = terminReihe(item);
+      var titel = kalenderTitel(item);
+      var beschreibung = "Aus Fällig übernommen.";
+      if (item.repeat) beschreibung += " Wiederholt sich " + repeatLabel(item.repeat) + ".";
+
+      reihe.keys.forEach(function (key, idx) {
+        z.push("BEGIN:VEVENT");
+        z.push("UID:" + item.id + (reihe.keys.length > 1 ? "-" + idx : "") + "@faellig");
+        z.push("DTSTAMP:" + stempel);
+        z.push("SEQUENCE:" + folge);
+        // Ganztaegig: Ende ist der Folgetag, so schreibt man das in Kalenderdateien.
+        z.push("DTSTART;VALUE=DATE:" + icsTag(key));
+        z.push("DTEND;VALUE=DATE:" + icsTag(toKey(addDays(fromKey(key), 1))));
+        z.push("SUMMARY:" + icsText(titel));
+        z.push("DESCRIPTION:" + icsText(beschreibung));
+        if (reihe.rrule) z.push("RRULE:" + reihe.rrule);
+        z.push("TRANSP:TRANSPARENT"); // blockiert keine Zeit im Kalender
+        if (alarm) {
+          z.push("BEGIN:VALARM");
+          z.push("ACTION:DISPLAY");
+          z.push("DESCRIPTION:" + icsText(titel));
+          z.push("TRIGGER;RELATED=START:" + alarm);
+          z.push("END:VALARM");
+        }
+        z.push("END:VEVENT");
+      });
+    });
+
+    z.push("END:VCALENDAR");
+    return z.map(icsFalten).join("\r\n") + "\r\n";
+  }
+
+  // Gewaehlte Einstellungen merken.
+  if (settings.icsAbos) icsAbosEl.checked = true;
+  icsAlarmEl.value = (settings.icsAlarm && ALARME.hasOwnProperty(settings.icsAlarm)) ? settings.icsAlarm : "1tag";
+
+  icsAbosEl.addEventListener("change", function () {
+    settings.icsAbos = icsAbosEl.checked;
+    saveSettings(settings);
+  });
+
+  icsAlarmEl.addEventListener("change", function () {
+    settings.icsAlarm = icsAlarmEl.value;
+    saveSettings(settings);
+  });
+
+  document.getElementById("icsFile").addEventListener("click", function () {
+    icsTextEl.hidden = true;
+
+    var mitAbos = icsAbosEl.checked;
+    var liste = kalenderEintraege(mitAbos);
+    if (!liste.length) {
+      // Nur auf die Abos hinweisen, wenn es ueberhaupt welche mit Datum gibt.
+      meldung(icsMsgEl, (!mitAbos && kalenderEintraege(true).length)
+        ? "Keine Fristen da — setz das Häkchen für die Abos."
+        : "Nichts mit Datum da, der Kalender wäre leer.", false);
+      return;
+    }
+
+    var text = icsBauen(mitAbos, icsAlarmEl.value);
+    icsTextEl.value = text;
+
+    var anzahl = liste.length + (liste.length === 1 ? " Eintrag" : " Einträge");
+
+    dateiAnbieten("faellig-kalender.ics", text, icsMsgEl, {
+      // Die Claude-Ansicht laesst .ics nicht durch, .txt schon.
+      ersatzName: "faellig-kalender.txt",
+      ersatzHinweis: "Benenn die Endung in .ics um, dann nimmt der Kalender sie.",
+      beiFehler: function () {
+        icsTextEl.hidden = false;
+        meldung(icsMsgEl, "Als Datei geht hier nicht. Kopier den Text und sichere ihn als faellig-kalender.ics.", false);
+      },
+    });
+
+    if (!icsMsgEl.textContent) meldung(icsMsgEl, anzahl + " unterwegs …");
+  });
 
   refreshPreview();
   render();
