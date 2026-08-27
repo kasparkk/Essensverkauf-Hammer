@@ -31,6 +31,7 @@
     --accent-ink: #ffffff;
     --accent-soft: #dcecea;
     --marker: #ffd60a;
+    --vertrag: #6b3fa0;
     --over: #c62f2f;
     --today: #b45c00;
     --done: #3f8a58;
@@ -52,6 +53,7 @@
       --accent-ink: #10201e;
       --accent-soft: #1e3b38;
       --marker: #ffd60a;
+      --vertrag: #b99bf0;
       --over: #ff7070;
       --today: #ffb454;
       --done: #63b37f;
@@ -73,6 +75,7 @@
     --accent-ink: #10201e;
     --accent-soft: #1e3b38;
     --marker: #ffd60a;
+    --vertrag: #b99bf0;
     --over: #ff7070;
     --today: #ffb454;
     --done: #63b37f;
@@ -809,6 +812,46 @@
 
   .chip--amount { color: var(--ink); border-color: var(--ink-faint); }
 
+  /* Kuendigungsfrist: eigene Farbe, damit sie sich vom Abbuchungstermin abhebt */
+  .task__kuend {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0 7px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--vertrag);
+  }
+
+  .task__kuend[data-tone="over"] { color: var(--over); border-color: var(--over); font-weight: 700; }
+  .task__kuend[data-tone="today"] { color: var(--today); border-color: var(--today); font-weight: 700; }
+
+  .chip--kuend { color: var(--vertrag); border-color: var(--vertrag); }
+
+  /* Abgeleitete Zeile in der Fristenliste — nicht abhakbar, darum kein Kasten */
+  .task--kuend { border-style: dashed; }
+  .task--kuend .task__text { font-weight: 600; }
+
+  .task__scissors {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--vertrag);
+    font-size: 0.95rem;
+  }
+
+  .task__badge--kuend { color: var(--vertrag); }
+
+  /* Das Kuendigungsdatum traegt die Zeile — ohne Tonfarbe bleibt es violett */
+  .task__due--stark { font-weight: 700; color: var(--vertrag); }
+  .task__due--stark[data-tone="over"] { color: var(--over); }
+  .task__due--stark[data-tone="today"] { color: var(--today); }
+
+  .task__vertragsinfo { color: var(--ink-faint); }
+
   /* Summe aller wiederkehrenden Kosten */
   .abos {
     display: none;
@@ -1447,6 +1490,18 @@
 
   // Keine feste Kategorienliste: Was du einmal mit "Kategorie: ..." schreibst,
   // erkennt die App danach auch ohne Doppelpunkt wieder.
+  // Wie formatDue, haengt aber das Jahr an, sobald es nicht das laufende ist.
+  // Eine Kuendigungsfrist liegt oft ueber ein Jahr weg — "Mi 31. Mär" allein
+  // waere dann nicht eindeutig.
+  function formatDueLang(key) {
+    var txt = formatDue(key);
+    var jahr = fromKey(key).getFullYear();
+    if (jahr !== today().getFullYear() && !/^(heute|morgen|gestern|seit )/.test(txt)) {
+      txt += " " + jahr;
+    }
+    return txt;
+  }
+
   function knownCategories() {
     var seen = {};
     items.forEach(function (i) {
@@ -1660,9 +1715,144 @@
     return n === 1 ? "jährlich" : "alle " + n + " Jahre";
   }
 
+  /* ---------- Vertragsdaten (Kuendigungsfrist, Laufzeit) ---------- */
+
+  var EINHEIT_WORT = "(tage?n?|wochen?|monate?n?|jahre?n?)";
+
+  function einheitAus(wort) {
+    var w = wort.toLowerCase();
+    if (w.indexOf("tag") === 0) return "day";
+    if (w.indexOf("woch") === 0) return "week";
+    if (w.indexOf("monat") === 0) return "month";
+    return "year";
+  }
+
+  var RHYTHMUS_WORT = {
+    "täglich": "day", "taeglich": "day",
+    "wöchentlich": "week", "woechentlich": "week",
+    "monatlich": "month",
+    "jährlich": "year", "jaehrlich": "year"
+  };
+
+  // Holt Kuendigungsfrist, Vertragsende und automatische Verlaengerung aus dem
+  // Satz. Muss VOR findRepeat und findDate laufen: "monatlich kuendbar" waere
+  // sonst der Abbuchungsrhythmus und "bis 31.3.2027" der Faelligkeitstermin.
+  function findKuendigung(text) {
+    var lower = text.toLowerCase();
+    var kuend = null, cuts = [];
+
+    function setzen(k, v) { (kuend = kuend || {})[k] = v; }
+    function schnitt(mm) {
+      cuts.push({ start: mm.index + (mm[1] || "").length, end: mm.index + mm[0].length });
+    }
+
+    // --- Kuendigungsfrist mit Zahl ---
+    var fristMuster = [
+      "(\\d{1,2})\\s*" + EINHEIT_WORT + "\\s+(?:kündigungsfrist|kuendigungsfrist)",
+      "(?:kündigungsfrist|kuendigungsfrist)\\s*:?\\s*(\\d{1,2})\\s*" + EINHEIT_WORT,
+      "(?:kündbar|kuendbar)\\s+mit\\s+(\\d{1,2})\\s*" + EINHEIT_WORT,
+      "mit\\s+(\\d{1,2})\\s*" + EINHEIT_WORT + "\\s+(?:kündbar|kuendbar)"
+    ];
+    var fm = null;
+    for (var fi = 0; fi < fristMuster.length && !fm; fi++) fm = lower.match(wordRe(fristMuster[fi]));
+    if (fm) {
+      setzen("n", Number(fm[2]));
+      setzen("unit", einheitAus(fm[3]));
+      schnitt(fm);
+    } else {
+      // --- "monatlich kuendbar" / "jederzeit kuendbar" ---
+      var rm = lower.match(wordRe("(täglich|taeglich|wöchentlich|woechentlich|monatlich|jährlich|jaehrlich)\\s+(?:kündbar|kuendbar)"));
+      if (rm) {
+        setzen("n", 1); setzen("unit", RHYTHMUS_WORT[rm[2]]); schnitt(rm);
+      } else {
+        var jm = lower.match(wordRe("jederzeit\\s+(?:kündbar|kuendbar)"));
+        if (jm) { setzen("n", 0); setzen("unit", "day"); schnitt(jm); }
+      }
+    }
+
+    // --- Vertragsende / Mindestlaufzeit ---
+    var endeWort = "(?:vertragsende|vertrag\\s+läuft\\s+bis|vertrag\\s+laeuft\\s+bis"
+      + "|mindestlaufzeit\\s+bis|laufzeit\\s+bis|läuft\\s+bis|laeuft\\s+bis"
+      + "|vertrag\\s+bis|gebunden\\s+bis|bindung\\s+bis)\\s*:?\\s*";
+    var em = lower.match(new RegExp(PRE + endeWort));
+    if (em) {
+      var restStart = em.index + em[0].length;
+      var gefunden = findDate(text.slice(restStart));
+      // Das Datum muss direkt hinter dem Stichwort stehen — sonst gehoert es
+      // zu etwas anderem im Satz und waere nicht das Vertragsende.
+      if (gefunden && gefunden.start <= 2) {
+        setzen("endeKey", toKey(gefunden.date));
+        cuts.push({ start: em.index + (em[1] || "").length, end: restStart + gefunden.end });
+      }
+    }
+
+    // --- automatische Verlaengerung ---
+    var vm = lower.match(wordRe("(?:verlängert|verlaengert)\\s+sich\\s+(?:automatisch\\s+)?um\\s+(\\d{1,2})\\s*" + EINHEIT_WORT));
+    if (vm) {
+      setzen("verl", { n: Number(vm[2]), unit: einheitAus(vm[3]) }); schnitt(vm);
+    } else {
+      vm = lower.match(wordRe("(?:verlängert|verlaengert)\\s+sich\\s+(?:automatisch\\s+)?(täglich|taeglich|wöchentlich|woechentlich|monatlich|jährlich|jaehrlich)"));
+      if (vm) {
+        setzen("verl", { n: 1, unit: RHYTHMUS_WORT[vm[2]] }); schnitt(vm);
+      } else {
+        vm = lower.match(wordRe("(?:verlängerung|verlaengerung)\\s*:?\\s*(?:um\\s+)?(\\d{1,2})\\s*" + EINHEIT_WORT));
+        if (vm) { setzen("verl", { n: Number(vm[2]), unit: einheitAus(vm[3]) }); schnitt(vm); }
+      }
+    }
+
+    return kuend ? { kuend: kuend, cuts: cuts } : null;
+  }
+
+  // Herausgeschnittene Stellen von hinten nach vorne entfernen, damit die
+  // Positionen der noch offenen Schnitte gueltig bleiben.
+  function schnitteAnwenden(text, cuts) {
+    cuts.slice().sort(function (a, b) { return b.start - a.start; }).forEach(function (c) {
+      text = text.slice(0, c.start) + " " + text.slice(c.end);
+    });
+    text = text.replace(/\s{2,}/g, " ");
+    text = text.replace(/(?:\s*[,;]\s*){2,}/g, ", ");
+    return text.replace(/^[\s,;]+/, "").replace(/[\s,;.]+$/, "").trim();
+  }
+
+  function kuendLabel(k) {
+    if (!k || k.n == null) return "";
+    if (k.n === 0) return "jederzeit kündbar";
+    var n = k.n;
+    if (k.unit === "day") return n === 1 ? "1 Tag Frist" : n + " Tage Frist";
+    if (k.unit === "week") return n === 1 ? "1 Woche Frist" : n + " Wochen Frist";
+    if (k.unit === "month") return n === 1 ? "1 Monat Frist" : n + " Monate Frist";
+    return n === 1 ? "1 Jahr Frist" : n + " Jahre Frist";
+  }
+
+  function zeitPlus(d, n, unit, anker) {
+    if (unit === "day") return addDays(d, n);
+    if (unit === "week") return addDays(d, 7 * n);
+    if (unit === "month") return addMonthsAnchored(d, n, anker);
+    return addYearsAnchored(d, n, anker);
+  }
+
+  // Letzter Tag, an dem die Kuendigung raus sein muss. Ohne Vertragsende gibt
+  // es keine Frist — dann sagt die Kuendigungsfrist nur, wie lange es dauert.
+  function kuendFrist(item) {
+    var k = item.kuend;
+    if (!k || !k.endeKey) return null;
+    var anker = fromKey(k.endeKey).getDate();
+    var ende = fromKey(k.endeKey);
+    var bis = zeitPlus(ende, -(k.n || 0), k.unit || "day", anker);
+    // Ist die Frist durch und der Vertrag verlaengert sich automatisch, dann
+    // zaehlt der naechste Durchgang — sonst stuende hier ewig ein totes Datum.
+    var guard = 0;
+    while (bis < today() && k.verl && guard < 200) {
+      ende = zeitPlus(ende, k.verl.n, k.verl.unit, anker);
+      bis = zeitPlus(ende, -(k.n || 0), k.unit || "day", anker);
+      guard++;
+    }
+    return { bisKey: toKey(bis), endeKey: toKey(ende) };
+  }
+
   function parseInput(raw) {
     var text = raw.trim();
-    if (!text) return { text: "", subject: null, dueKey: null, isFixed: false, repeat: null, amountCents: null };
+    if (!text) return { text: "", subject: null, dueKey: null, isFixed: false, repeat: null, amountCents: null, kuend: null };
 
     var subject = null;
 
@@ -1693,6 +1883,15 @@
       amountCents = am.cents;
       text = (text.slice(0, am.start) + " " + text.slice(am.end)).replace(/\s{2,}/g, " ").trim();
       text = text.replace(/\s*\b(für|a|je)\b\s*$/i, "").trim();
+    }
+
+    // Vertragsdaten vor Rhythmus und Datum herausloesen — sonst wuerde
+    // "monatlich kuendbar" als Abbuchungsrhythmus gelesen.
+    var kuend = null;
+    var kfund = findKuendigung(text);
+    if (kfund) {
+      kuend = kfund.kuend;
+      text = schnitteAnwenden(text, kfund.cuts);
     }
 
     // Wiederholung zuerst herausloesen, damit "jeden Dienstag" nicht als
@@ -1732,11 +1931,18 @@
       repeat.tag = fromKey(dueKey).getDate();
     }
 
-    var lowerAll = raw.toLowerCase();
+    // Vertragsvokabular vorher entfernen: "3 Monate Kündigungsfrist" beschreibt
+    // den Vertrag und macht den Eintrag nicht zu einem festen Termin. Ein
+    // blosses "Kündigung schreiben" zaehlt dagegen weiterhin.
+    var lowerAll = raw.toLowerCase()
+      .replace(/(?:kündigungsfrist|kuendigungsfrist)/g, " ")
+      .replace(/(?:kündbar|kuendbar)/g, " ")
+      .replace(/(?:verlängert|verlaengert)\s+sich/g, " ")
+      .replace(/(?:verlängerung|verlaengerung)/g, " ");
     var isFixed = FIXED_WORDS.some(function (w) { return lowerAll.indexOf(w) !== -1; });
 
     return { text: text, subject: subject, dueKey: dueKey, isFixed: isFixed,
-             repeat: repeat, amountCents: amountCents };
+             repeat: repeat, amountCents: amountCents, kuend: kuend };
   }
 
   /* ======================= Speicher ======================= */
@@ -1802,6 +2008,17 @@
     if (item.amountCents) meta += '<span class="task__amount">' + esc(formatCents(item.amountCents)) + "</span>";
     if (item.repeat) meta += '<span class="task__repeat">↻ ' + esc(repeatLabel(item.repeat)) +
       (item.doneCount ? " · " + item.doneCount + "×" : "") + "</span>";
+    if (item.kuend) {
+      var kf = kuendFrist(item);
+      if (kf) {
+        var ktage = daysUntil(kf.bisKey);
+        var ktone = ktage < 0 ? "over" : ktage <= 30 ? "today" : "";
+        meta += '<span class="task__kuend" data-tone="' + ktone + '">✂ kündigen bis ' +
+          esc(formatDueLang(kf.bisKey)) + "</span>";
+      } else if (item.kuend.n != null) {
+        meta += '<span class="task__kuend">✂ ' + esc(kuendLabel(item.kuend)) + "</span>";
+      }
+    }
     if (due) meta += '<span class="task__due" data-tone="' + tone + '">' + esc(due) + "</span>";
 
     return '<div class="task" data-tone="' + tone + '" data-exam="' + (item.isFixed ? "true" : "false") + '" data-id="' + item.id + '">' +
@@ -1815,9 +2032,38 @@
       "</div>";
   }
 
+  // Die Kuendigungsfrist eines Abos bekommt bei den Fristen eine eigene Zeile —
+  // dort sucht man Termine. Abgehakt wird sie nicht: erledigt ist sie erst,
+  // wenn der Vertrag weg ist, und dann loescht man das Abo.
+  function renderKuendZeile(r) {
+    var bucket = bucketOf(r);
+    var tone = bucket === "over" ? "over" : bucket === "today" ? "today" : "";
+    var i = r.item;
+    var titel = (i.subject ? i.subject + ": " : "") + (i.text || "Vertrag");
+
+    // Reihenfolge nach Wichtigkeit: erst bis wann, dann warum. Das Datum ist
+    // der Grund, warum die Zeile ueberhaupt hier steht.
+    var meta = '<span class="task__badge task__badge--kuend">Kündigung</span>';
+    meta += '<span class="task__due task__due--stark" data-tone="' + tone + '">bis ' +
+      esc(formatDueLang(r.dueKey)) + "</span>";
+    var leise = "Vertrag bis " + formatDueLang(r.endeKey);
+    if (i.kuend.n) leise += " · " + kuendLabel(i.kuend);
+    meta += '<span class="task__vertragsinfo">' + esc(leise) + "</span>";
+
+    return '<div class="task task--kuend" data-tone="' + tone + '">' +
+      '<div class="task__scissors" aria-hidden="true">✂</div>' +
+      '<div class="task__body">' +
+        '<div class="task__text">' + esc(titel) + " kündigen</div>" +
+        '<div class="task__meta">' + meta + "</div>" +
+      "</div>" +
+      '<button class="task__write" data-act="kuendtext" data-id="' + i.id + '" title="Kündigung schreiben">Text</button>' +
+      "</div>";
+  }
+
   // Ein Abo ist etwas Wiederkehrendes, das Geld kostet. "Muell jeden Dienstag"
-  // wiederholt sich zwar, gehoert aber zu den Fristen.
-  function isAbo(i) { return !!(i.repeat && i.amountCents); }
+  // wiederholt sich zwar, gehoert aber zu den Fristen. Ein Vertrag mit
+  // Laufzeit zaehlt ebenfalls dazu, auch ohne Preis — er laeuft ja weiter.
+  function isAbo(i) { return !!(i.repeat && i.amountCents) || !!(i.kuend && i.kuend.endeKey); }
 
   function render() {
     var open = items.filter(function (i) { return !i.done; });
@@ -1828,13 +2074,25 @@
     var todos = rest.filter(function (i) { return !i.dueKey; });
     open = rest.filter(function (i) { return !!i.dueKey; });
 
+    // Fristenliste besteht aus echten Eintraegen und den abgeleiteten
+    // Kuendigungsterminen der Abos.
+    var zeilen = open.map(function (i) {
+      return { kind: "item", item: i, dueKey: i.dueKey, isFixed: i.isFixed, createdAt: i.createdAt };
+    });
+    offeneAbos.forEach(function (i) {
+      var kf = kuendFrist(i);
+      if (!kf) return;
+      zeilen.push({ kind: "kuend", item: i, dueKey: kf.bisKey, endeKey: kf.endeKey,
+                    isFixed: true, createdAt: i.createdAt });
+    });
+
     // Kopfzahl: was heute wirklich ansteht (überfällig + heute).
-    var urgent = open.filter(function (i) {
-      var b = bucketOf(i);
+    var urgent = zeilen.filter(function (r) {
+      var b = bucketOf(r);
       return b === "over" || b === "today";
     }).length;
 
-    countNum.textContent = urgent > 0 ? urgent : open.length;
+    countNum.textContent = urgent > 0 ? urgent : zeilen.length;
     countLabel.textContent = urgent > 0 ? (urgent === 1 ? "für heute" : "für heute") : "offen";
     headCount.dataset.urgent = urgent > 0 ? "true" : "false";
 
@@ -1853,7 +2111,7 @@
         abos.length === 1 ? "1 Posten" : abos.length + " Posten";
     }
 
-    if (open.length === 0) {
+    if (zeilen.length === 0) {
       listEl.innerHTML =
         '<div class="empty">' +
           '<div class="empty__big">' + (items.length ? "Alles erledigt." : "Noch nichts eingetragen.") + "</div>" +
@@ -1865,9 +2123,9 @@
         "</div>";
     } else {
       var byBucket = {};
-      open.forEach(function (i) {
-        var b = bucketOf(i);
-        (byBucket[b] = byBucket[b] || []).push(i);
+      zeilen.forEach(function (r) {
+        var b = bucketOf(r);
+        (byBucket[b] = byBucket[b] || []).push(r);
       });
 
       var html = "";
@@ -1882,7 +2140,9 @@
         html += '<div class="group">' +
           '<div class="group__head" data-tone="' + b.tone + '">' + b.title +
           ' <span class="group__count">' + group.length + "</span></div>" +
-          group.map(renderTask).join("") +
+          group.map(function (r) {
+            return r.kind === "kuend" ? renderKuendZeile(r) : renderTask(r.item);
+          }).join("") +
           "</div>";
       });
       listEl.innerHTML = html;
@@ -1905,7 +2165,9 @@
     var aboListEl = document.getElementById("aboList");
     if (!abos.length) {
       aboListEl.innerHTML = '<div class="empty"><div class="empty__big">Noch keine Abos.</div>' +
-        '<div class="empty__hint">Tipp oben z.&nbsp;B. „Netflix 12,99 € jeden Monat“ ein.</div></div>';
+        '<div class="empty__hint">Tipp oben z.&nbsp;B. „Netflix 12,99 € jeden Monat“ ein.<br>' +
+        'Mit Laufzeit: „Fitness 30 € jeden Monat, Vertrag bis 31.3.2027, 3 Monate Kündigungsfrist“ — ' +
+        'die Kündigungsfrist steht dann bei den Fristen.</div></div>';
     } else {
       var sortiert = abos.slice().sort(function (a, b) { return centsPerMonth(b) - centsPerMonth(a); });
       aboListEl.innerHTML = '<div class="group">' + sortiert.map(renderTask).join("") + "</div>";
@@ -1937,6 +2199,7 @@
   // Abo (wiederkehrend + Betrag), sonst Frist (mit Datum) oder To-do (ohne).
   function zielBereich(p) {
     if (p.repeat && p.amountCents) return "abos";
+    if (p.kuend && p.kuend.endeKey) return "abos";
     return p.dueKey ? "fristen" : "todos";
   }
 
@@ -1971,6 +2234,11 @@
     bits += '<span class="chip chip--date">' + (p.dueKey ? esc(formatDue(p.dueKey)) : "ohne Termin") + "</span>";
     if (p.repeat) bits += '<span class="chip chip--subject">↻ ' + esc(repeatLabel(p.repeat)) + "</span>";
     if (p.amountCents) bits += '<span class="chip chip--amount">' + esc(formatCents(p.amountCents)) + "</span>";
+    if (p.kuend) {
+      var vk = kuendFrist({ kuend: p.kuend });
+      if (vk) bits += '<span class="chip chip--kuend">✂ kündigen bis ' + esc(formatDueLang(vk.bisKey)) + "</span>";
+      else if (p.kuend.n != null) bits += '<span class="chip chip--kuend">✂ ' + esc(kuendLabel(p.kuend)) + "</span>";
+    }
     // Wo landet der Eintrag? Sichtbar machen, statt raten zu lassen.
     var ziel = zielBereich(p);
     if (ziel !== aktiverTab) {
@@ -2034,6 +2302,7 @@
       isFixed: p.isFixed,
       repeat: p.repeat || null,
       amountCents: p.amountCents || null,
+      kuend: p.kuend || null,
       done: false,
       createdAt: Date.now(),
     });
@@ -2059,6 +2328,9 @@
 
     if (act === "write") {
       writeFor(item);
+      return;
+    } else if (act === "kuendtext") {
+      writeFor(item, "kuendigung");
       return;
     } else if (act === "done") {
       if (item.repeat && item.dueKey) {
@@ -2733,13 +3005,15 @@
   });
 
   // Von einer Aufgabe zum Textbaukasten springen
-  function writeFor(item) {
+  function writeFor(item, tplId) {
     var bits = [];
     if (item.subject) bits.push(item.subject);
     if (item.text) bits.push(item.text);
     msg.context = bits.join(": ");
-    msg.tplId = null;
-    msg.values = {};
+    msg.tplId = tplId || null;
+    // Den eigenen Namen nicht mitloeschen — sonst fehlt die Unterschrift.
+    msg.values = { ich: settings.ich || "" };
+    if (tplId === "kuendigung") msg.values.vertrag = bits.join(" ").trim();
     showTab("texte");
     renderMsgAll();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3528,6 +3802,24 @@
     return prefix + Date.now() + Math.random().toString(36).slice(2, 6);
   }
 
+  var KUEND_EINHEITEN = { day: 1, week: 1, month: 1, year: 1 };
+
+  function saeubernKuend(k) {
+    if (!k || typeof k !== "object") return null;
+    var out = {}, hat = false;
+    if (typeof k.n === "number" && isFinite(k.n) && k.n >= 0 && k.n <= 99 && KUEND_EINHEITEN[k.unit]) {
+      out.n = Math.round(k.n); out.unit = k.unit; hat = true;
+    }
+    if (typeof k.endeKey === "string" && /^\d{4}-\d{2}-\d{2}$/.test(k.endeKey)) {
+      out.endeKey = k.endeKey; hat = true;
+    }
+    if (k.verl && typeof k.verl === "object" && typeof k.verl.n === "number" &&
+        isFinite(k.verl.n) && k.verl.n > 0 && k.verl.n <= 99 && KUEND_EINHEITEN[k.verl.unit]) {
+      out.verl = { n: Math.round(k.verl.n), unit: k.verl.unit };
+    }
+    return hat ? out : null;
+  }
+
   function saeubernEintrag(x) {
     return {
       id: (typeof x.id === "string" && x.id) ? x.id : neueId("t"),
@@ -3537,6 +3829,7 @@
       isFixed: !!x.isFixed,
       repeat: (x.repeat && typeof x.repeat === "object") ? x.repeat : null,
       amountCents: (typeof x.amountCents === "number" && isFinite(x.amountCents)) ? x.amountCents : null,
+      kuend: saeubernKuend(x.kuend),
       done: !!x.done,
       createdAt: (typeof x.createdAt === "number" && isFinite(x.createdAt)) ? x.createdAt : Date.now(),
     };
@@ -3743,6 +4036,12 @@
     });
   }
 
+  // Kuendigungsfristen kommen immer mit, auch ohne Haekchen bei den Abos:
+  // sie sind ein Termin, keine laufende Kostenbuchung.
+  function kuendKalender() {
+    return items.filter(function (i) { return !i.done && i.kuend && kuendFrist(i); });
+  }
+
   var ICS_DURCHGAENGE = 24;
 
   // Entweder eine Wiederholungsregel, die der Kalender selbst versteht, oder
@@ -3783,7 +4082,8 @@
 
   function icsBauen(mitAbos, alarmId) {
     var liste = kalenderEintraege(mitAbos);
-    if (!liste.length) return null;
+    var kuendListe = kuendKalender();
+    if (!liste.length && !kuendListe.length) return null;
 
     // Hoehere Nummer bei jedem Export: ein zweiter Import gilt dann als
     // Aktualisierung derselben Termine, nicht als neue.
@@ -3832,6 +4132,31 @@
       });
     });
 
+    // Kuendigungstermine als einzelne Termine. Keine Wiederholungsregel: die
+    // Verlaengerung rechnet die App selbst, ein Kalender kaeme auf anderes.
+    kuendListe.forEach(function (item) {
+      var kf = kuendFrist(item);
+      var titel = ((item.subject ? item.subject + ": " : "") + (item.text || "Vertrag")) + " kündigen";
+      z.push("BEGIN:VEVENT");
+      z.push("UID:" + item.id + "-kuend@faellig");
+      z.push("DTSTAMP:" + stempel);
+      z.push("SEQUENCE:" + folge);
+      z.push("DTSTART;VALUE=DATE:" + icsTag(kf.bisKey));
+      z.push("DTEND;VALUE=DATE:" + icsTag(toKey(addDays(fromKey(kf.bisKey), 1))));
+      z.push("SUMMARY:" + icsText(titel));
+      z.push("DESCRIPTION:" + icsText("Letzter Tag, an dem die Kündigung raus sein muss. Vertrag läuft bis "
+        + formatDueLang(kf.endeKey) + "."));
+      z.push("TRANSP:TRANSPARENT");
+      if (alarm) {
+        z.push("BEGIN:VALARM");
+        z.push("ACTION:DISPLAY");
+        z.push("DESCRIPTION:" + icsText(titel));
+        z.push("TRIGGER;RELATED=START:" + alarm);
+        z.push("END:VALARM");
+      }
+      z.push("END:VEVENT");
+    });
+
     z.push("END:VCALENDAR");
     return z.map(icsFalten).join("\r\n") + "\r\n";
   }
@@ -3855,7 +4180,8 @@
 
     var mitAbos = icsAbosEl.checked;
     var liste = kalenderEintraege(mitAbos);
-    if (!liste.length) {
+    var kuendAnzahl = kuendKalender().length;
+    if (!liste.length && !kuendAnzahl) {
       // Nur auf die Abos hinweisen, wenn es ueberhaupt welche mit Datum gibt.
       meldung(icsMsgEl, (!mitAbos && kalenderEintraege(true).length)
         ? "Keine Fristen da — setz das Häkchen für die Abos."
@@ -3866,7 +4192,8 @@
     var text = icsBauen(mitAbos, icsAlarmEl.value);
     icsTextEl.value = text;
 
-    var anzahl = liste.length + (liste.length === 1 ? " Eintrag" : " Einträge");
+    var gesamt = liste.length + kuendAnzahl;
+    var anzahl = gesamt + (gesamt === 1 ? " Eintrag" : " Einträge");
 
     dateiAnbieten("faellig-kalender.ics", text, icsMsgEl, {
       // Die Claude-Ansicht laesst .ics nicht durch, .txt schon.
