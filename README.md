@@ -23,13 +23,30 @@ Weitere direkt im eingebauten Chat.
 
 ## Deployment auf Netlify
 
-Das Projekt ist für Netlify vorbereitet:
+Live: https://mitbring-reisemitbringer.netlify.app
 
-1. Repo mit Netlify verbinden (oder `netlify deploy --build --prod`)
-2. Env-Var `SESSION_SECRET` in den Site-Einstellungen setzen
-3. Beim ersten Deploy provisioniert Netlify automatisch eine Postgres-Datenbank
-   und führt die SQL-Migration unter `netlify/database/migrations/001_init`
-   aus – keine manuelle DB-Einrichtung nötig.
+Das Projekt ist vollständig für Netlify konfiguriert (`netlify.toml`):
+
+1. Env-Var `SESSION_SECRET` in den Site-Einstellungen setzen (langer
+   Zufallsstring).
+2. Beim ersten Deploy provisioniert Netlify automatisch eine Postgres-Datenbank
+   und wendet die SQL-Migrationen unter `netlify/database/migrations/` an –
+   keine manuelle DB-Einrichtung, kein Connection-String nötig.
+
+### Besonderheit: Next.js-Runtime
+
+Wird `@netlify/plugin-nextjs` von Netlifys Plugin-System ausgeführt, bricht der
+Deploy hier mit einem generischen `Build script returned non-zero exit code: 2`
+ab. Ein Diagnose-Deploy hat gezeigt, dass sowohl `next build` als auch die
+Build-Hooks des Plugins in derselben Umgebung fehlerfrei laufen, wenn man sie
+direkt aufruft. Deshalb:
+
+- `NETLIFY_NEXT_PLUGIN_SKIP = "true"` deaktiviert die Ausführung durch Netlify
+- `scripts/netlify-next-runtime.mjs` ruft `onBuild`/`onPostBuild` nach dem Build
+  selbst auf und erzeugt Server-Handler, Edge-Handler und Publish-Verzeichnis
+
+Sollte eine neuere Plugin-Version das Problem beheben, kann das Skript entfernt
+und das Plugin wieder regulär über `[[plugins]]` eingebunden werden.
 
 ## Lokale Entwicklung
 
