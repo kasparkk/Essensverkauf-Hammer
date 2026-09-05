@@ -45,9 +45,9 @@ nicht als Attrappe eingebaut:
 
 ## Sprachen
 
-Die Oberfläche gibt es auf Englisch, Deutsch, Spanisch, Portugiesisch und
-Französisch - passend zu einer Plattform, auf der Leute über Ländergrenzen
-hinweg zusammenfinden.
+Die Oberfläche gibt es in acht Sprachen - passend zu einer Plattform, auf der
+Leute über Ländergrenzen hinweg zusammenfinden: Englisch, Deutsch, Spanisch,
+Portugiesisch, Französisch, Italienisch, Niederländisch und Polnisch.
 
 - Erkennung: erst die ausdrückliche Wahl im Cookie, sonst der
   `Accept-Language`-Header des Browsers, sonst Englisch
@@ -55,7 +55,7 @@ hinweg zusammenfinden.
 - Auch die Fehler- und Validierungsmeldungen der API kommen in der Sprache des
   Aufrufers zurück
 - Datums-, Gewichts- und Geldangaben werden pro Sprache formatiert
-  (`€25.00` vs. `25,00 €`)
+  (`€25.00`, `25,00 €`, `€ 25,00`)
 - Wörterbücher liegen unter `src/lib/i18n/dictionaries/`. Das englische ist die
   Vorlage, aus der der `Dictionary`-Typ abgeleitet wird - ein fehlender oder
   vertippter Schlüssel in einer Übersetzung ist damit ein Build-Fehler.

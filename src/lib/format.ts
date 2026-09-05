@@ -10,6 +10,9 @@ const intlLocales: Record<Locale, string> = {
   es: "es-ES",
   pt: "pt-PT",
   fr: "fr-FR",
+  it: "it-IT",
+  nl: "nl-NL",
+  pl: "pl-PL",
 };
 
 export function formatDate(date: Date | string, locale: Locale) {

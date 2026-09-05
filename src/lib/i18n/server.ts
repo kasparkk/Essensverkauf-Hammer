@@ -6,8 +6,11 @@ import de from "./dictionaries/de";
 import es from "./dictionaries/es";
 import pt from "./dictionaries/pt";
 import fr from "./dictionaries/fr";
+import it from "./dictionaries/it";
+import nl from "./dictionaries/nl";
+import pl from "./dictionaries/pl";
 
-const dictionaries: Record<Locale, Dictionary> = { en, de, es, pt, fr };
+const dictionaries: Record<Locale, Dictionary> = { en, de, es, pt, fr, it, nl, pl };
 
 /**
  * Aktive Sprache: erst die ausdrückliche Wahl im Cookie, sonst was der
