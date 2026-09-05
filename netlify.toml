@@ -3,6 +3,8 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # Build braucht devDependencies (Next.js-Runtime-Plugin, ESLint-Config)
+  NPM_FLAGS = "--include=dev"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
