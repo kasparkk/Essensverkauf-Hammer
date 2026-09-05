@@ -84,6 +84,10 @@
 
   * { box-sizing: border-box; }
 
+  /* Eigene display-Regeln stechen sonst das eingebaute hidden aus, und ein
+     ausgeblendetes Element bliebe sichtbar. */
+  [hidden] { display: none !important; }
+
   body {
     margin: 0;
     background: var(--bg);
@@ -456,6 +460,44 @@
 
   .noresult { color: var(--ink-faint); font-size: 0.88rem; padding: 6px 2px; }
 
+  /* ---------- Eigene Vorlagen ---------- */
+
+  .eigene { display: flex; flex-direction: column; gap: 12px; }
+
+  .eigene__kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+  .eigene__hint { font-size: 0.8rem; color: var(--ink-faint); flex: 1 1 200px; line-height: 1.4; }
+
+  .eigene__form {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 8px 22px var(--shadow);
+  }
+
+  .eigene__form textarea {
+    width: 100%;
+    min-height: 110px;
+    resize: vertical;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 10px 11px;
+    font: inherit;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .eigene__form textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .eigene__form textarea::placeholder { color: var(--ink-faint); }
+
+  .eigene__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
   .fields {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -571,6 +613,46 @@
 
   .task__write:hover { border-color: var(--accent); color: var(--accent); }
   .task__write:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Bearbeiten-Stift: wie das Loeschkreuz zurueckhaltend, bis man hinzeigt */
+  .task__edit {
+    flex: none;
+    border: none;
+    background: transparent;
+    color: var(--ink-faint);
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: 6px;
+    align-self: center;
+    opacity: 0;
+  }
+
+  .task:hover .task__edit, .task__edit:focus-visible { opacity: 1; }
+  .task__edit:hover { color: var(--accent); }
+  .task__edit:focus-visible { outline: 2px solid var(--accent); }
+
+  @media (hover: none) {
+    .task__edit { opacity: 1; }
+  }
+
+  /* Zeile im Bearbeiten-Zustand */
+  .task--edit {
+    border-color: var(--accent);
+    border-left-color: var(--accent);
+    display: block;
+  }
+
+  .task--edit .add__input { width: 100%; }
+  .task--edit .preview { margin-top: 8px; min-height: 0; }
+
+  .task__editrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
 
   /* ---------- Eingabe ---------- */
 
@@ -1295,6 +1377,28 @@
       </div>
     </div>
 
+    <div class="eigene">
+      <div class="eigene__kopf">
+        <button class="btn btn--primary" id="vorlageNeu" type="button">+ Eigene Vorlage</button>
+        <button class="btn" id="vorlageBearbeiten" type="button" hidden>Diese Vorlage bearbeiten</button>
+        <span class="eigene__hint">Eigener Baustein. Alles in [eckigen Klammern] wird beim Benutzen zum Ausfüllfeld.</span>
+      </div>
+      <div class="eigene__form" id="vorlageForm" hidden>
+        <label class="field"><span class="field__label">Titel</span>
+          <input class="field__input" id="vorlageTitel" type="text" placeholder="z. B. Nachbarn wegen Paket" /></label>
+        <label class="field"><span class="field__label">Betreff für E-Mail (optional)</span>
+          <input class="field__input" id="vorlageBetreff" type="text" placeholder="z. B. Paketannahme" /></label>
+        <label class="field"><span class="field__label">Text — Anrede und Grußformel kommen automatisch dazu</span>
+          <textarea id="vorlageText" placeholder="könnten Sie am [Wochentag] ein Paket für mich annehmen? Ich bin dann nicht da."></textarea></label>
+        <div class="eigene__row">
+          <button class="btn btn--primary" id="vorlageSpeichern" type="button">Speichern</button>
+          <button class="btn" id="vorlageAbbrechen" type="button">Abbrechen</button>
+          <button class="btn btn--danger" id="vorlageLoeschen" type="button" hidden>Löschen</button>
+          <span class="backup__msg" id="vorlageMsg"></span>
+        </div>
+      </div>
+    </div>
+
     <section class="picker">
       <div class="context" id="context" style="display:none;">
         <span>Bezieht sich auf: <b id="contextText"></b></span>
@@ -1333,7 +1437,7 @@
       <div class="backup__block">
         <span class="backup__title">Sichern</span>
         <span class="backup__hint">
-          Speichert alles — Fristen, To-dos, Abos, Notizen und deinen Namen — in einer Datei.
+          Speichert alles — Fristen, To-dos, Abos, Notizen, eigene Vorlagen und deinen Namen — in einer Datei.
           Falls das Speichern blockiert wird, kopier einfach den Text darunter.
         </span>
         <div class="backup__row">
@@ -1850,6 +1954,47 @@
     return { bisKey: toKey(bis), endeKey: toKey(ende) };
   }
 
+  // --- Einen gespeicherten Eintrag wieder als Satz schreiben ---
+  //
+  // Zum Bearbeiten braucht es den Satz zurueck, den man haette tippen koennen.
+  // Er wird beim Speichern neu gelesen, also muss alles drinstehen, was sonst
+  // verloren ginge — vor allem das Datum: ohne es wuerde "monatlich" beim
+  // Zurueckleseneinen neuen Starttermin bekommen.
+  function datumWort(key) {
+    var d = fromKey(key);
+    return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear();
+  }
+
+  function einheitWort(n, unit) {
+    if (unit === "day") return n === 1 ? "Tag" : "Tage";
+    if (unit === "week") return n === 1 ? "Woche" : "Wochen";
+    if (unit === "month") return n === 1 ? "Monat" : "Monate";
+    return n === 1 ? "Jahr" : "Jahre";
+  }
+
+  function eintragSatz(item) {
+    var s = "";
+    if (item.subject) s += item.subject + ": ";
+    s += item.text || "";
+    if (item.amountCents) s += " " + formatCents(item.amountCents);
+    if (item.repeat) {
+      // "jeden 31." statt "monatlich": nur so bleibt der Monatsanker erhalten,
+      // wenn der naechste Termin gerade auf dem 28. steht.
+      s += " " + (item.repeat.unit === "month" && (item.repeat.n || 1) === 1 && item.repeat.tag
+        ? "jeden " + item.repeat.tag + "."
+        : repeatLabel(item.repeat));
+    }
+    if (item.kuend) {
+      var k = item.kuend;
+      if (k.endeKey) s += ", Vertrag bis " + datumWort(k.endeKey);
+      if (k.n === 0) s += ", jederzeit kündbar";
+      else if (k.n != null) s += ", " + k.n + " " + einheitWort(k.n, k.unit) + " Kündigungsfrist";
+      if (k.verl) s += ", verlängert sich um " + k.verl.n + " " + einheitWort(k.verl.n, k.verl.unit);
+    }
+    if (item.dueKey) s += " bis " + datumWort(item.dueKey);
+    return s.replace(/\s{2,}/g, " ").trim();
+  }
+
   function parseInput(raw) {
     var text = raw.trim();
     if (!text) return { text: "", subject: null, dueKey: null, isFixed: false, repeat: null, amountCents: null, kuend: null };
@@ -1931,6 +2076,14 @@
       repeat.tag = fromKey(dueKey).getDate();
     }
 
+    // Satzzeichen aufraeumen, die vom Herausschneiden uebrig geblieben sind:
+    // aus "Fitness 30 €, Vertrag bis ..." wird sonst der Text "Fitness ,".
+    text = text.replace(/\s{2,}/g, " ")
+               .replace(/(?:\s*[,;]\s*){2,}/g, ", ")
+               .replace(/^[\s,;]+/, "")
+               .replace(/[\s,;]+$/, "")
+               .trim();
+
     // Vertragsvokabular vorher entfernen: "3 Monate Kündigungsfrist" beschreibt
     // den Vertrag und macht den Eintrag nicht zu einem festen Termin. Ein
     // blosses "Kündigung schreiben" zaehlt dagegen weiterhin.
@@ -1997,7 +2150,10 @@
     { id: "later", title: "Später", tone: "" },
   ];
 
+  var bearbeiteId = null; // Eintrag, der gerade bearbeitet wird
+
   function renderTask(item) {
+    if (item.id === bearbeiteId) return renderBearbeiten(item);
     var bucket = bucketOf(item);
     var tone = bucket === "over" ? "over" : bucket === "today" ? "today" : "";
     var due = item.dueKey ? formatDue(item.dueKey) : "";
@@ -2028,8 +2184,25 @@
         (meta ? '<div class="task__meta">' + meta + "</div>" : "") +
       "</div>" +
       '<button class="task__write" data-act="write" data-id="' + item.id + '" title="Passenden Text schreiben">Text</button>' +
+      '<button class="task__edit" data-act="edit" data-id="' + item.id + '" aria-label="Bearbeiten" title="Bearbeiten">✎</button>' +
       '<button class="task__del" data-act="del" data-id="' + item.id + '" aria-label="Löschen" title="Löschen">×</button>' +
       "</div>";
+  }
+
+  // Beim Bearbeiten wird dieselbe Zeile zum Eingabefeld — mit derselben
+  // Vorschau wie beim Anlegen, damit man sieht, was die App verstanden hat.
+  function renderBearbeiten(item) {
+    return '<div class="task task--edit" data-id="' + item.id + '">' +
+      '<div class="task__body">' +
+        '<input class="add__input" id="editInput" type="text" autocomplete="off" ' +
+          'aria-label="Eintrag bearbeiten" value="' + esc(eintragSatz(item)) + '" />' +
+        '<div class="preview" id="editVorschau" aria-live="polite"></div>' +
+        '<div class="task__editrow">' +
+          '<button class="btn btn--primary" type="button" data-act="editsave" data-id="' + item.id + '">Speichern</button>' +
+          '<button class="btn" type="button" data-act="editcancel" data-id="' + item.id + '">Abbrechen</button>' +
+        "</div>" +
+      "</div>" +
+    "</div>";
   }
 
   // Die Kuendigungsfrist eines Abos bekommt bei den Fristen eine eigene Zeile —
@@ -2218,16 +2391,8 @@
     return p;
   }
 
-  function refreshPreview() {
-    var value = addInput.value.trim();
-    addSubmit.disabled = value.length === 0;
-
-    if (!value) {
-      preview.innerHTML = '<span id="previewHint">Einfach lostippen — Termine wie „morgen“, „Freitag“ oder „12.5.“ erkennt sie selbst.</span>';
-      return;
-    }
-
-    var p = currentParse();
+  // Die Bausteine, die zeigen, was aus dem Satz gelesen wurde.
+  function chipsFuer(p) {
     var bits = "";
     if (p.subject) bits += '<span class="chip chip--subject">' + esc(p.subject) + "</span>";
     if (p.isFixed) bits += '<span class="chip chip--exam">Termin</span>';
@@ -2239,6 +2404,20 @@
       if (vk) bits += '<span class="chip chip--kuend">✂ kündigen bis ' + esc(formatDueLang(vk.bisKey)) + "</span>";
       else if (p.kuend.n != null) bits += '<span class="chip chip--kuend">✂ ' + esc(kuendLabel(p.kuend)) + "</span>";
     }
+    return bits;
+  }
+
+  function refreshPreview() {
+    var value = addInput.value.trim();
+    addSubmit.disabled = value.length === 0;
+
+    if (!value) {
+      preview.innerHTML = '<span id="previewHint">Einfach lostippen — Termine wie „morgen“, „Freitag“ oder „12.5.“ erkennt sie selbst.</span>';
+      return;
+    }
+
+    var p = currentParse();
+    var bits = chipsFuer(p);
     // Wo landet der Eintrag? Sichtbar machen, statt raten zu lassen.
     var ziel = zielBereich(p);
     if (ziel !== aktiverTab) {
@@ -2247,6 +2426,29 @@
     if (p.text) bits += '<span>' + esc(p.text) + "</span>";
     preview.innerHTML = bits;
   }
+
+  // Beim Bearbeiten dieselbe Vorschau wie beim Anlegen — ohne den Hinweis,
+  // in welchen Reiter der Eintrag wandert.
+  function editVorschauZeichnen() {
+    var el = document.getElementById("editInput");
+    var ziel = document.getElementById("editVorschau");
+    if (!el || !ziel) return;
+    var wert = el.value.trim();
+    if (!wert) { ziel.innerHTML = '<span>Leer — so lässt sich nichts speichern.</span>'; return; }
+    var p = parseInput(wert);
+    ziel.innerHTML = chipsFuer(p) + (p.text ? '<span>' + esc(p.text) + "</span>" : "");
+  }
+
+  document.addEventListener("input", function (ev) {
+    if (ev.target && ev.target.id === "editInput") editVorschauZeichnen();
+  });
+
+  // Enter speichert, Escape bricht ab — wie man es von einem Eingabefeld erwartet.
+  document.addEventListener("keydown", function (ev) {
+    if (!ev.target || ev.target.id !== "editInput") return;
+    if (ev.key === "Enter") { ev.preventDefault(); bearbeitenSpeichern(); }
+    else if (ev.key === "Escape") { ev.preventDefault(); bearbeiteId = null; render(); }
+  });
 
   addInput.addEventListener("input", function () {
     // Sobald wieder getippt wird, gewinnt der Text – ausser der Knopf wurde danach gedrückt.
@@ -2318,6 +2520,37 @@
 
   /* ======================= Klicks auf der Liste ======================= */
 
+  // Der bearbeitete Satz wird komplett neu gelesen. Alles, was nicht im Satz
+  // steht — Anlagedatum, Erledigt-Zustand, Zaehler — bleibt unangetastet.
+  function bearbeitenSpeichern() {
+    var el = document.getElementById("editInput");
+    var item = items.find(function (i) { return i.id === bearbeiteId; });
+    if (!el || !item) return;
+    var wert = el.value.trim();
+    if (!wert) return; // Leeres Feld loescht nichts — dafuer gibt es das ×.
+
+    var altDue = item.dueKey, altRepeat = item.repeat;
+    var p = parseInput(wert);
+    item.text = p.text || wert;
+    item.subject = p.subject;
+    item.dueKey = p.dueKey;
+    item.isFixed = p.isFixed;
+    item.repeat = p.repeat || null;
+    item.amountCents = p.amountCents || null;
+    item.kuend = p.kuend || null;
+
+    // Hat sich am Rhythmus und am Termin nichts geaendert, bleibt auch der
+    // Monatsanker, wie er war — sonst wuerde aus dem 31. dauerhaft der 28.
+    if (item.repeat && altRepeat && altRepeat.tag && item.dueKey === altDue &&
+        item.repeat.unit === altRepeat.unit && (item.repeat.n || 1) === (altRepeat.n || 1)) {
+      item.repeat.tag = altRepeat.tag;
+    }
+
+    bearbeiteId = null;
+    save(items);
+    render();
+  }
+
   document.addEventListener("click", function (ev) {
     var btn = ev.target.closest("[data-act]");
     if (!btn) return;
@@ -2326,7 +2559,21 @@
     var item = items.find(function (i) { return i.id === id; });
     if (!item) return;
 
-    if (act === "write") {
+    if (act === "edit") {
+      bearbeiteId = id;
+      render();
+      var feld = document.getElementById("editInput");
+      if (feld) { feld.focus(); feld.setSelectionRange(feld.value.length, feld.value.length); }
+      editVorschauZeichnen();
+      return;
+    } else if (act === "editcancel") {
+      bearbeiteId = null;
+      render();
+      return;
+    } else if (act === "editsave") {
+      bearbeitenSpeichern();
+      return;
+    } else if (act === "write") {
       writeFor(item);
       return;
     } else if (act === "kuendtext") {
@@ -2726,7 +2973,50 @@
   var contextEl = document.getElementById("context");
   var contextText = document.getElementById("contextText");
 
-  function tplById(id) { return TEMPLATES.find(function (t) { return t.id === id; }); }
+  /* ---------- Eigene Vorlagen ---------- */
+
+  var VORLAGEN_KEY = "faellig-vorlagen-v1";
+
+  function loadVorlagen() {
+    try {
+      var roh = localStorage.getItem(VORLAGEN_KEY);
+      var a = roh ? JSON.parse(roh) : [];
+      return Array.isArray(a) ? a : [];
+    } catch (e) { return []; }
+  }
+
+  function saveVorlagen() {
+    try { localStorage.setItem(VORLAGEN_KEY, JSON.stringify(eigene)); } catch (e) {}
+  }
+
+  var eigene = loadVorlagen();
+
+  // Aus dem selbst geschriebenen Text eine Vorlage machen: [Wochentag] wird zu
+  // einem Ausfuellfeld. Die drei Toenungen sind identisch — der Text ist ja
+  // schon so formuliert, wie er gemeint ist.
+  function vorlageZuTpl(v) {
+    var felder = [], zaehler = 0;
+    var kern = String(v.text || "").replace(/\[([^\]\n]{1,40})\]/g, function (_, wort) {
+      zaehler++;
+      var key = "p" + zaehler;
+      felder.push({ key: key, gap: wort.trim(), label: wort.trim(), ph: "" });
+      return "{" + key + "}";
+    });
+    return {
+      id: v.id, cat: "Eigene", eigen: true,
+      title: v.title || "Ohne Titel",
+      betreff: v.betreff || v.title || "",
+      fields: felder,
+      core: { locker: kern, sachlich: kern, bestimmt: kern }
+    };
+  }
+
+  // Eigene zuerst — man sucht das, was man selbst angelegt hat.
+  function alleTemplates() {
+    return eigene.map(vorlageZuTpl).concat(TEMPLATES);
+  }
+
+  function tplById(id) { return alleTemplates().find(function (t) { return t.id === id; }); }
 
   function val(key) {
     var v = (msg.values[key] || "").trim();
@@ -2841,7 +3131,7 @@
 
   function renderCats() {
     var q = searchEl.value.trim().toLowerCase();
-    var list = TEMPLATES.filter(function (t) {
+    var list = alleTemplates().filter(function (t) {
       if (!q) return true;
       return (t.title + " " + t.cat).toLowerCase().indexOf(q) !== -1;
     });
@@ -2908,7 +3198,89 @@
     }
   }
 
-  function renderMsgAll() { renderCats(); renderMsgFields(); renderResult(); renderContext(); }
+  /* ---------- Eigene Vorlagen: Bedienung ---------- */
+
+  var vorlageFormEl = document.getElementById("vorlageForm");
+  var vorlageTitelEl = document.getElementById("vorlageTitel");
+  var vorlageBetreffEl = document.getElementById("vorlageBetreff");
+  var vorlageTextEl = document.getElementById("vorlageText");
+  var vorlageMsgEl = document.getElementById("vorlageMsg");
+  var vorlageLoeschenBtn = document.getElementById("vorlageLoeschen");
+  var vorlageBearbeitenBtn = document.getElementById("vorlageBearbeiten");
+
+  var vorlageOffen = null; // id der Vorlage, die im Formular liegt (null = neue)
+
+  function vorlageById(id) { return eigene.find(function (v) { return v.id === id; }); }
+
+  function vorlageFormZeigen(v) {
+    vorlageOffen = v ? v.id : null;
+    vorlageTitelEl.value = v ? (v.title || "") : "";
+    vorlageBetreffEl.value = v ? (v.betreff || "") : "";
+    vorlageTextEl.value = v ? (v.text || "") : "";
+    vorlageLoeschenBtn.hidden = !v;
+    vorlageFormEl.hidden = false;
+    meldung(vorlageMsgEl, "");
+    vorlageTitelEl.focus();
+  }
+
+  function vorlageFormSchliessen() {
+    vorlageFormEl.hidden = true;
+    vorlageOffen = null;
+    meldung(vorlageMsgEl, "");
+  }
+
+  // Der Knopf zum Bearbeiten erscheint nur, wenn gerade eine eigene Vorlage
+  // ausgewaehlt ist — bei den mitgelieferten gibt es nichts zu aendern.
+  function renderVorlagenLeiste() {
+    var t = tplById(msg.tplId);
+    vorlageBearbeitenBtn.hidden = !(t && t.eigen);
+  }
+
+  document.getElementById("vorlageNeu").addEventListener("click", function () {
+    vorlageFormZeigen(null);
+  });
+
+  vorlageBearbeitenBtn.addEventListener("click", function () {
+    var v = vorlageById(msg.tplId);
+    if (v) vorlageFormZeigen(v);
+  });
+
+  document.getElementById("vorlageAbbrechen").addEventListener("click", vorlageFormSchliessen);
+
+  document.getElementById("vorlageSpeichern").addEventListener("click", function () {
+    var titel = vorlageTitelEl.value.trim();
+    var text = vorlageTextEl.value.trim();
+    if (!titel) { meldung(vorlageMsgEl, "Gib der Vorlage einen Titel.", false); vorlageTitelEl.focus(); return; }
+    if (!text) { meldung(vorlageMsgEl, "Ohne Text gibt es nichts zu schreiben.", false); vorlageTextEl.focus(); return; }
+
+    var v = vorlageOffen ? vorlageById(vorlageOffen) : null;
+    if (v) {
+      v.title = titel; v.betreff = vorlageBetreffEl.value.trim(); v.text = text;
+    } else {
+      v = { id: "v" + Date.now() + Math.random().toString(36).slice(2, 6),
+            title: titel, betreff: vorlageBetreffEl.value.trim(), text: text,
+            createdAt: Date.now() };
+      eigene.unshift(v);
+    }
+    saveVorlagen();
+    msg.tplId = v.id;
+    msg.values = { ich: settings.ich || "" };
+    vorlageFormSchliessen();
+    renderMsgAll();
+  });
+
+  vorlageLoeschenBtn.addEventListener("click", function () {
+    var v = vorlageOffen ? vorlageById(vorlageOffen) : null;
+    if (!v) return;
+    if (!confirm("Vorlage „" + v.title + "“ löschen?")) return;
+    eigene = eigene.filter(function (x) { return x.id !== v.id; });
+    saveVorlagen();
+    if (msg.tplId === v.id) { msg.tplId = null; msg.values = { ich: settings.ich || "" }; }
+    vorlageFormSchliessen();
+    renderMsgAll();
+  });
+
+  function renderMsgAll() { renderCats(); renderMsgFields(); renderResult(); renderContext(); renderVorlagenLeiste(); }
 
   document.getElementById("channelSeg").addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-channel]"); if (!b) return;
@@ -3640,6 +4012,7 @@
       exportedAt: new Date().toISOString(),
       items: items,
       notes: notes,
+      vorlagen: eigene,
       settings: settings,
     };
   }
@@ -3659,7 +4032,7 @@
     if (backupEl.open) { expFuellen(); meldung(expMsgEl, ""); }
   });
 
-  function mengenText(eintraege, notizen) {
+  function mengenText(eintraege, notizen, vorlagen) {
     var fristen = 0, todos = 0, abos = 0;
     eintraege.forEach(function (i) {
       if (isAbo(i)) abos++;
@@ -3671,6 +4044,7 @@
     if (todos) teile.push(todos + (todos === 1 ? " To-do" : " To-dos"));
     if (abos) teile.push(abos + (abos === 1 ? " Abo" : " Abos"));
     if (notizen.length) teile.push(notizen.length + (notizen.length === 1 ? " Notiz" : " Notizen"));
+    if (vorlagen && vorlagen.length) teile.push(vorlagen.length + (vorlagen.length === 1 ? " Vorlage" : " Vorlagen"));
     if (!teile.length) return "nichts";
     if (teile.length === 1) return teile[0];
     return teile.slice(0, -1).join(", ") + " und " + teile[teile.length - 1];
@@ -3798,6 +4172,21 @@
     return !!(x && typeof x === "object" && typeof x.text === "string");
   }
 
+  function gueltigeVorlage(x) {
+    return !!(x && typeof x === "object" && typeof x.text === "string" && x.text.trim() &&
+              typeof x.title === "string" && x.title.trim());
+  }
+
+  function saeubernVorlage(x) {
+    return {
+      id: (typeof x.id === "string" && x.id) ? x.id : neueId("v"),
+      title: String(x.title),
+      betreff: (typeof x.betreff === "string") ? x.betreff : "",
+      text: String(x.text),
+      createdAt: (typeof x.createdAt === "number" && isFinite(x.createdAt)) ? x.createdAt : Date.now(),
+    };
+  }
+
   function neueId(prefix) {
     return prefix + Date.now() + Math.random().toString(36).slice(2, 6);
   }
@@ -3865,17 +4254,18 @@
 
     var eintraege = (Array.isArray(p.items) ? p.items : []).filter(gueltigerEintrag).map(saeubernEintrag);
     var notizen = (Array.isArray(p.notes) ? p.notes : []).filter(gueltigeNotiz).map(saeubernNotiz);
+    var vorlagen = (Array.isArray(p.vorlagen) ? p.vorlagen : []).filter(gueltigeVorlage).map(saeubernVorlage);
     var einst = (p.settings && typeof p.settings === "object" && !Array.isArray(p.settings)) ? p.settings : {};
 
-    if (!eintraege.length && !notizen.length) {
+    if (!eintraege.length && !notizen.length && !vorlagen.length) {
       meldung(impMsgEl, "Die Sicherung ist leer.", false);
       return;
     }
 
-    wartendesPaket = { items: eintraege, notes: notizen, settings: einst };
+    wartendesPaket = { items: eintraege, notes: notizen, vorlagen: vorlagen, settings: einst };
     impMergeBtn.disabled = false;
     impReplaceBtn.disabled = false;
-    meldung(impMsgEl, "Gefunden: " + mengenText(eintraege, notizen) + ".", true);
+    meldung(impMsgEl, "Gefunden: " + mengenText(eintraege, notizen, vorlagen) + ".", true);
   }
 
   impTextEl.addEventListener("input", function () { paketPruefen(impTextEl.value); });
@@ -3929,28 +4319,34 @@
     var notizIds = {};
     notes.forEach(function (n) { notizIds[n.id] = true; });
 
+    var vorlagenIds = {};
+    eigene.forEach(function (v) { vorlagenIds[v.id] = true; });
+
     var neueEintraege = p.items.filter(function (i) { return !vorhandeneIds[i.id]; });
     var neueNotizen = p.notes.filter(function (n) { return !notizIds[n.id]; });
+    var neueVorlagen = (p.vorlagen || []).filter(function (v) { return !vorlagenIds[v.id]; });
 
     neueEintraege.forEach(function (i) { items.push(i); });
     neueNotizen.forEach(function (n) { notes.push(n); });
+    neueVorlagen.forEach(function (v) { eigene.push(v); });
     notes.sort(function (a, b) { return b.createdAt - a.createdAt; });
 
     if (!settings.ich && p.settings.ich) settings.ich = p.settings.ich;
 
     save(items);
     saveNotes();
+    saveVorlagen();
     saveSettings(settings);
     allesNeuZeichnen();
 
-    var dazu = neueEintraege.length + neueNotizen.length;
+    var dazu = neueEintraege.length + neueNotizen.length + neueVorlagen.length;
     if (!dazu) fertig("War schon alles da \u2014 nichts doppelt angelegt.");
-    else fertig("Dazugekommen: " + mengenText(neueEintraege, neueNotizen) + ".");
+    else fertig("Dazugekommen: " + mengenText(neueEintraege, neueNotizen, neueVorlagen) + ".");
   });
 
   impReplaceBtn.addEventListener("click", function () {
     if (!wartendesPaket) return;
-    var vorher = mengenText(items, notes);
+    var vorher = mengenText(items, notes, eigene);
     if (!confirm("Alles ersetzen?\n\nWas jetzt drin ist (" + vorher + "), wird gel\u00f6scht und durch die Sicherung ersetzt.")) return;
 
     var p = wartendesPaket;
@@ -3959,14 +4355,17 @@
     notes.length = 0;
     p.notes.forEach(function (n) { notes.push(n); });
     notes.sort(function (a, b) { return b.createdAt - a.createdAt; });
+    eigene.length = 0;
+    (p.vorlagen || []).forEach(function (v) { eigene.push(v); });
 
     if (p.settings.ich) settings.ich = p.settings.ich;
 
     save(items);
     saveNotes();
+    saveVorlagen();
     saveSettings(settings);
     allesNeuZeichnen();
-    fertig("Ersetzt \u2014 jetzt drin: " + mengenText(items, notes) + ".");
+    fertig("Ersetzt \u2014 jetzt drin: " + mengenText(items, notes, eigene) + ".");
   });
 
   expFuellen();
