@@ -1,10 +1,11 @@
 [build]
-  command = "npm run build"
+  command = "npm run build && node ./scripts/netlify-next-runtime.mjs"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22"
-  # Build braucht devDependencies (Next.js-Runtime-Plugin, ESLint-Config)
+  # Build braucht devDependencies (u.a. das Next.js-Runtime-Paket)
   NPM_FLAGS = "--include=dev"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+  # Das Plugin wird nicht von Netlify, sondern von scripts/netlify-next-runtime.mjs
+  # ausgeführt - siehe Kommentar in diesem Skript.
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
