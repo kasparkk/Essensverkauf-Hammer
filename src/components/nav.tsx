@@ -6,28 +6,31 @@ type NavUser = { id: string; name: string; email: string } | null;
 export default function Nav({ user }: { user: NavUser }) {
   return (
     <header className="border-b border-neutral-200 dark:border-neutral-800">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="text-lg font-semibold tracking-tight">
-          ✈️ Mitbring
+          🧳 CarryConnect
         </Link>
 
-        <nav className="flex items-center gap-5 text-sm">
-          <Link href="/trips" className="hover:underline">
-            Reisen
-          </Link>
+        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
           <Link href="/requests" className="hover:underline">
             Anfragen
           </Link>
+          <Link href="/trips" className="hover:underline">
+            Reisen
+          </Link>
           {user && (
-            <Link href="/chat" className="hover:underline">
-              Chat
-            </Link>
+            <>
+              <Link href="/deals" className="hover:underline">
+                Abmachungen
+              </Link>
+              <Link href="/chat" className="hover:underline">
+                Chat
+              </Link>
+            </>
           )}
           {user ? (
             <>
-              <span className="hidden text-neutral-500 sm:inline">
-                Hallo, {user.name}
-              </span>
+              <span className="hidden text-neutral-500 sm:inline">{user.name}</span>
               <LogoutButton />
             </>
           ) : (

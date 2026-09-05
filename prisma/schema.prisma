@@ -10,6 +10,43 @@ datasource db {
   provider = "postgresql"
 }
 
+/// Verkehrsmittel einer Reise - bestimmt, wie viel typischerweise mitgeht.
+enum TransportMode {
+  FLIGHT
+  TRAIN
+  CAR
+  BUS
+}
+
+/// Die drei Anliegen, die die Plattform abdeckt.
+enum RequestKind {
+  /// Etwas Liegengelassenes soll zurückgeholt werden.
+  RETRIEVAL
+  /// Etwas soll im Ausland gekauft und mitgebracht werden.
+  SHOPPING
+  /// Ein vorhandener Gegenstand soll von A nach B.
+  TRANSPORT
+}
+
+/// Wie der Gegenstand beim Ziel ankommt.
+enum DeliveryMode {
+  /// Persönliche Übergabe am Ziel.
+  HANDOFF
+  /// Reisender gibt am Ziel bei der Post ab, letzte Meile per Paketdienst.
+  POSTAL
+  /// Beides in Ordnung.
+  EITHER
+}
+
+enum DealStatus {
+  PROPOSED
+  ACCEPTED
+  PICKED_UP
+  DELIVERED
+  CONFIRMED
+  CANCELLED
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -21,40 +58,91 @@ model User {
   requests      Request[]
   conversations ConversationParticipant[]
   messages      Message[]
+  dealsAsRequester Deal[] @relation("DealRequester")
+  dealsAsTraveler  Deal[] @relation("DealTraveler")
 }
 
 model Trip {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fromCountry String
-  fromCity    String?
-  toCountry   String
-  toCity      String?
-  travelDate  DateTime
-  notes       String?
-  createdAt   DateTime @default(now())
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transportMode TransportMode @default(FLIGHT)
+  fromCountry   String
+  fromCity      String?
+  toCountry     String
+  toCity        String?
+  travelDate    DateTime
+  /// Wie viel Platz frei ist, in Kilogramm.
+  capacityKg    Float?
+  /// Ob der Reisende am Ziel bei der Post abgeben würde.
+  offersPostal  Boolean       @default(false)
+  notes         String?
+  createdAt     DateTime      @default(now())
 
   conversations Conversation[]
+  deals         Deal[]
 
   @@index([toCountry])
   @@index([fromCountry])
+  @@index([travelDate])
 }
 
 model Request {
-  id              String   @id @default(cuid())
+  id              String       @id @default(cuid())
   userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind            RequestKind  @default(TRANSPORT)
   fromCountry     String
+  fromCity        String?
   toCountry       String
+  toCity          String?
   itemDescription String
+  /// Bis wann es beim Ziel sein muss.
+  deadline        DateTime?
+  /// Geschätztes Gewicht in Kilogramm.
+  weightKg        Float?
+  /// Honorar für den Reisenden, in Cent.
+  rewardCents     Int?
+  /// Bei Einkaufsanfragen: erwarteter Warenwert in Cent.
+  itemValueCents  Int?
+  deliveryMode    DeliveryMode @default(EITHER)
+  isOpen          Boolean      @default(true)
   notes           String?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime     @default(now())
 
   conversations Conversation[]
+  deals         Deal[]
 
   @@index([toCountry])
   @@index([fromCountry])
+  @@index([isOpen])
+}
+
+/// Eine konkrete Abmachung zwischen Anfrage und Reise.
+model Deal {
+  id           String       @id @default(cuid())
+  requestId    String
+  request      Request      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  tripId       String
+  trip         Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  requesterId  String
+  requester    User         @relation("DealRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  travelerId   String
+  traveler     User         @relation("DealTraveler", fields: [travelerId], references: [id], onDelete: Cascade)
+  /// Wer den Deal vorgeschlagen hat - annehmen darf nur die andere Seite.
+  proposedById String
+  status       DealStatus   @default(PROPOSED)
+  /// Vereinbartes Honorar in Cent (kann vom Vorschlag der Anfrage abweichen).
+  rewardCents  Int?
+  deliveryMode DeliveryMode @default(EITHER)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  conversation Conversation?
+
+  @@unique([requestId, tripId])
+  @@index([requesterId])
+  @@index([travelerId])
 }
 
 model Conversation {
@@ -63,6 +151,8 @@ model Conversation {
   trip      Trip?    @relation(fields: [tripId], references: [id], onDelete: Cascade)
   requestId String?
   request   Request? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  dealId    String?  @unique
+  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
   participants ConversationParticipant[]

@@ -1,18 +1,47 @@
-# Mitbring
+# CarryConnect
 
-Eine kleine Plattform: Wer im Urlaub oder auf Reisen etwas vergessen hat oder
-sich etwas aus einem anderen Land wünscht, findet hier Reisende, die zufällig
-ins gleiche Land fliegen und es mitbringen können. Beide Seiten klären alles
-Weitere direkt im eingebauten Chat.
+Peer-to-peer-Kurierdienst: Wer unterwegs ist, hat oft freien Platz im Gepäck –
+wer etwas transportiert oder besorgt braucht, zahlt sonst teure Paketpreise.
+CarryConnect bringt beide Seiten über passende Routen zusammen.
+
+## Die drei Anliegen
+
+1. **Liegengelassen** – Vergessenes zurückholen (AirPods im Hotel in Buenos
+   Aires, Mantel in Brüssel), per Übergabe oder Postabgabe am Ziel.
+2. **Einkauf** – Regionale Produkte besorgen lassen, die daheim nicht zu haben
+   oder stark verteuert sind.
+3. **Transport** – Gegenstände zwischen Städten bewegen, wo Paketversand
+   unpraktisch oder unverhältnismäßig teuer ist.
 
 ## Funktionsumfang
 
 - Registrierung/Login mit E-Mail & Passwort (Session-Cookie, JWT via `jose`)
-- **Reisen**: Reisende tragen Abflugs-/Zielort und Datum ein
-- **Anfragen**: Leute beschreiben, was sie mitgebracht bekommen möchten
-- Beide Listen lassen sich nach Zielland filtern
-- **Chat**: Kontaktaufnahme startet eine Konversation, Nachrichten werden per
-  Polling (alle 3 Sekunden) aktualisiert
+- **Anfragen** mit Art, Route (Land + Stadt), Deadline, Gewicht, Honorar in Euro
+  und gewünschtem Liefermodus
+- **Reisen** mit Verkehrsmittel (Flug/Zug/Auto/Bus), Route, Datum, freiem Platz
+  in kg und optionaler Postabgabe am Ziel
+- **Route-Matching** (`src/lib/matching.ts`): bewertet Treffer nach Route,
+  Städten, Datum gegen Deadline, Kapazität gegen Gewicht und Liefermodus – und
+  zeigt jede Begründung an, damit das Ranking nachvollziehbar bleibt
+- **Abmachungen** mit Ablauf *vorgeschlagen → angenommen → abgeholt → geliefert
+  → bestätigt* (oder abgebrochen). Wer vorschlägt, kann nicht selbst annehmen;
+  jeder Schritt ist an die passende Rolle gebunden (`src/lib/deals.ts`).
+  Eine zugesagte Anfrage gilt als vergeben und verschwindet aus der Liste.
+- **Chat** pro Abmachung, Nachrichten per Polling (alle 3 Sekunden)
+
+## Noch nicht umgesetzt
+
+Diese Bausteine des Konzepts brauchen externe Dienstleister und sind bewusst
+nicht als Attrappe eingebaut:
+
+- **Escrow-Zahlung** – Honorare werden aktuell direkt zwischen den Beteiligten
+  beglichen; treuhänderisches Halten und Freigeben braucht einen
+  Zahlungsanbieter (z. B. Stripe Connect).
+- **KYC / Identitätsprüfung** – es gibt absichtlich kein „verifiziert“-Abzeichen,
+  solange nichts geprüft wird. Nötig wäre ein Ausweis-Dienst
+  (z. B. Stripe Identity).
+- **Foto-Verifikation bei der Übergabe** – braucht Datei-Upload und
+  Blob-Storage.
 
 ## Tech-Stack
 

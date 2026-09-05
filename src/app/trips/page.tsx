@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/format";
+import { formatWeight, routeLabel, transportModeLabels } from "@/lib/labels";
 
 export default async function TripsPage({
   searchParams,
@@ -10,7 +11,9 @@ export default async function TripsPage({
   const { toCountry } = await searchParams;
 
   const trips = await prisma.trip.findMany({
-    where: toCountry ? { toCountry: { contains: toCountry } } : undefined,
+    where: toCountry
+      ? { toCountry: { contains: toCountry, mode: "insensitive" } }
+      : undefined,
     orderBy: { travelDate: "asc" },
     include: { user: { select: { name: true } } },
   });
@@ -23,7 +26,7 @@ export default async function TripsPage({
           href="/trips/new"
           className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
         >
-          Eigene Reise eintragen
+          Reise eintragen
         </Link>
       </div>
 
@@ -52,16 +55,21 @@ export default async function TripsPage({
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-medium">
-                  {trip.fromCity ? `${trip.fromCity}, ` : ""}
-                  {trip.fromCountry} → {trip.toCity ? `${trip.toCity}, ` : ""}
-                  {trip.toCountry}
+                  {routeLabel(trip.fromCity, trip.fromCountry, trip.toCity, trip.toCountry)}
                 </p>
                 <span className="text-sm text-neutral-500">
                   {formatDate(trip.travelDate)}
                 </span>
               </div>
-              <p className="mt-1 text-sm text-neutral-500">
-                von {trip.user.name}
+              <p className="mt-1 text-xs text-neutral-500">
+                {[
+                  transportModeLabels[trip.transportMode],
+                  `von ${trip.user.name}`,
+                  formatWeight(trip.capacityKg) ? `${formatWeight(trip.capacityKg)} frei` : null,
+                  trip.offersPostal ? "gibt bei der Post ab" : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </Link>
           </li>
@@ -69,9 +77,8 @@ export default async function TripsPage({
         {trips.length === 0 && (
           <p className="text-neutral-500">
             Noch keine Reisen eingetragen.{" "}
-            {toCountry && "Versuch es mit einem anderen Land oder "}
             <Link href="/trips/new" className="underline">
-              trage die erste ein
+              Trage die erste ein
             </Link>
             .
           </p>

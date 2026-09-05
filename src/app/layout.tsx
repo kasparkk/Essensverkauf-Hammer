@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mitbring – Nimm mit, was andere vergessen haben",
+  title: "CarryConnect – Freier Platz im Gepäck ist ein Kurierdienst",
   description:
-    "Mitbring verbindet Reisende mit Leuten, die etwas ins gleiche Land mitgebracht bekommen möchten.",
+    "CarryConnect verbindet Reisende mit ungenutztem Gepäckplatz und Leute, die etwas transportiert oder besorgt brauchen.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

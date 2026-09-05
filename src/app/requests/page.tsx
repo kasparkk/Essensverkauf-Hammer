@@ -1,16 +1,34 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/format";
+import {
+  deliveryModeLabels,
+  formatMoney,
+  formatWeight,
+  requestKindLabels,
+  routeLabel,
+} from "@/lib/labels";
+import type { RequestKind } from "@/generated/prisma/client";
+
+const kinds = Object.keys(requestKindLabels) as RequestKind[];
+
+function isKind(value: string | undefined): value is RequestKind {
+  return kinds.includes(value as RequestKind);
+}
 
 export default async function RequestsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ toCountry?: string }>;
+  searchParams: Promise<{ toCountry?: string; kind?: string }>;
 }) {
-  const { toCountry } = await searchParams;
+  const { toCountry, kind } = await searchParams;
 
   const requests = await prisma.request.findMany({
-    where: toCountry ? { toCountry: { contains: toCountry } } : undefined,
+    where: {
+      isOpen: true,
+      ...(toCountry ? { toCountry: { contains: toCountry, mode: "insensitive" } } : {}),
+      ...(isKind(kind) ? { kind } : {}),
+    },
     orderBy: { createdAt: "desc" },
     include: { user: { select: { name: true } } },
   });
@@ -23,11 +41,24 @@ export default async function RequestsPage({
           href="/requests/new"
           className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
         >
-          Eigene Anfrage erstellen
+          Anfrage erstellen
         </Link>
       </div>
 
-      <form className="mt-6 flex gap-2" method="get">
+      <div className="mt-4 flex flex-wrap gap-2 text-sm">
+        <FilterChip href="/requests" active={!isKind(kind)} label="Alle" />
+        {kinds.map((option) => (
+          <FilterChip
+            key={option}
+            href={`/requests?kind=${option}`}
+            active={kind === option}
+            label={requestKindLabels[option]}
+          />
+        ))}
+      </div>
+
+      <form className="mt-4 flex gap-2" method="get">
+        {isKind(kind) && <input type="hidden" name="kind" value={kind} />}
         <input
           type="text"
           name="toCountry"
@@ -44,35 +75,76 @@ export default async function RequestsPage({
       </form>
 
       <ul className="mt-6 space-y-3">
-        {requests.map((req) => (
-          <li key={req.id}>
-            <Link
-              href={`/requests/${req.id}`}
-              className="block rounded-xl border border-neutral-200 p-4 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-medium">{req.itemDescription}</p>
-                <span className="text-sm text-neutral-500">
-                  {formatDate(req.createdAt)}
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-neutral-500">
-                {req.fromCountry} → {req.toCountry} · von {req.user.name}
-              </p>
-            </Link>
-          </li>
-        ))}
+        {requests.map((req) => {
+          const reward = formatMoney(req.rewardCents);
+          const weight = formatWeight(req.weightKg);
+          return (
+            <li key={req.id}>
+              <Link
+                href={`/requests/${req.id}`}
+                className="block rounded-xl border border-neutral-200 p-4 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium dark:bg-neutral-800">
+                      {requestKindLabels[req.kind]}
+                    </span>
+                    <p className="mt-1.5 font-medium">{req.itemDescription}</p>
+                  </div>
+                  {reward && (
+                    <span className="whitespace-nowrap font-semibold">{reward}</span>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-neutral-500">
+                  {routeLabel(req.fromCity, req.fromCountry, req.toCity, req.toCountry)}
+                </p>
+                <p className="mt-1 text-xs text-neutral-500">
+                  {[
+                    `von ${req.user.name}`,
+                    req.deadline ? `bis ${formatDate(req.deadline)}` : null,
+                    weight,
+                    deliveryModeLabels[req.deliveryMode],
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </Link>
+            </li>
+          );
+        })}
         {requests.length === 0 && (
           <p className="text-neutral-500">
-            Noch keine Anfragen vorhanden.{" "}
-            {toCountry && "Versuch es mit einem anderen Land oder "}
+            Keine passenden Anfragen.{" "}
             <Link href="/requests/new" className="underline">
-              erstelle die erste
+              Erstelle die erste
             </Link>
             .
           </p>
         )}
       </ul>
     </div>
+  );
+}
+
+function FilterChip({
+  href,
+  active,
+  label,
+}: {
+  href: string;
+  active: boolean;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`rounded-full border px-3 py-1 ${
+        active
+          ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
+          : "border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-900"
+      }`}
+    >
+      {label}
+    </Link>
   );
 }
