@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getErrors, translateIssue } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/auth";
 
 const createDealSchema = z.object({
@@ -11,9 +12,10 @@ const createDealSchema = z.object({
 });
 
 export async function GET() {
+  const e = await getErrors();
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Bitte zuerst anmelden" }, { status: 401 });
+    return NextResponse.json({ error: e.notLoggedIn }, { status: 401 });
   }
 
   const deals = await prisma.deal.findMany({
@@ -37,16 +39,17 @@ export async function GET() {
  * muss anschließend die jeweils andere Seite.
  */
 export async function POST(request: NextRequest) {
+  const e = await getErrors();
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Bitte zuerst anmelden" }, { status: 401 });
+    return NextResponse.json({ error: e.notLoggedIn }, { status: 401 });
   }
 
   const body = await request.json().catch(() => null);
   const parsed = createDealSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" },
+      { error: translateIssue(parsed.error.issues[0]?.message, e) },
       { status: 400 }
     );
   }
@@ -60,21 +63,21 @@ export async function POST(request: NextRequest) {
 
   if (!itemRequest || !trip) {
     return NextResponse.json(
-      { error: "Anfrage oder Reise nicht gefunden" },
+      { error: e.requestOrTripNotFound },
       { status: 404 }
     );
   }
 
   if (itemRequest.userId === trip.userId) {
     return NextResponse.json(
-      { error: "Anfrage und Reise gehören derselben Person" },
+      { error: e.sameOwner },
       { status: 400 }
     );
   }
 
   if (user.id !== itemRequest.userId && user.id !== trip.userId) {
     return NextResponse.json(
-      { error: "Nur Beteiligte können eine Abmachung vorschlagen" },
+      { error: e.onlyParticipants },
       { status: 403 }
     );
   }

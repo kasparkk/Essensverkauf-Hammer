@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { Dictionary } from "@/lib/i18n/types";
 
 export type DealSide =
   | { requestId: string; tripId?: never }
@@ -17,9 +18,10 @@ export default function ProposeDealButton({
   fixed,
   counterpartId,
   counterpartOptions,
-  label = "Abmachung vorschlagen",
+  label,
   isLoggedIn,
   compact = false,
+  t,
 }: {
   fixed: DealSide;
   counterpartId?: string;
@@ -27,40 +29,36 @@ export default function ProposeDealButton({
   label?: string;
   isLoggedIn: boolean;
   compact?: boolean;
+  t: Dictionary["deals"];
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState(counterpartOptions?.[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const fixedIsRequest = Boolean(fixed.requestId);
+
   if (!isLoggedIn) {
     return (
       <Link href="/login" className="text-sm font-medium underline">
-        Anmelden, um eine Abmachung vorzuschlagen
+        {t.loginToPropose}
       </Link>
     );
   }
 
   if (counterpartOptions && counterpartOptions.length === 0) {
+    const template = fixedIsRequest ? t.needTripFirst : t.needRequestFirst;
+    const linkText = fixedIsRequest ? t.needTripLink : t.needRequestLink;
+    const href = fixedIsRequest ? "/trips/new" : "/requests/new";
+    const [before, after] = template.split("{link}");
+
     return (
       <p className="text-sm text-neutral-500">
-        {"requestId" in fixed && fixed.requestId ? (
-          <>
-            Du brauchst zuerst eine{" "}
-            <Link href="/trips/new" className="underline">
-              eingetragene Reise
-            </Link>
-            , um hier zuzusagen.
-          </>
-        ) : (
-          <>
-            Du brauchst zuerst eine{" "}
-            <Link href="/requests/new" className="underline">
-              eigene Anfrage
-            </Link>
-            , um hier anzufragen.
-          </>
-        )}
+        {before}
+        <Link href={href} className="underline">
+          {linkText}
+        </Link>
+        {after}
       </p>
     );
   }
@@ -71,10 +69,9 @@ export default function ProposeDealButton({
     setError(null);
     setLoading(true);
 
-    const payload =
-      "requestId" in fixed && fixed.requestId
-        ? { requestId: fixed.requestId, tripId: otherId }
-        : { requestId: otherId, tripId: (fixed as { tripId: string }).tripId };
+    const payload = fixedIsRequest
+      ? { requestId: fixed.requestId, tripId: otherId }
+      : { requestId: otherId, tripId: fixed.tripId };
 
     const res = await fetch("/api/deals", {
       method: "POST",
@@ -85,7 +82,7 @@ export default function ProposeDealButton({
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Abmachung konnte nicht angelegt werden");
+      setError(data.error ?? t.createFailed);
       return;
     }
 
@@ -112,12 +109,8 @@ export default function ProposeDealButton({
           ))}
         </select>
       )}
-      <button
-        onClick={handleClick}
-        disabled={loading || !otherId}
-        className={buttonClass}
-      >
-        {loading ? "Moment…" : label}
+      <button onClick={handleClick} disabled={loading || !otherId} className={buttonClass}>
+        {loading ? "…" : label ?? t.propose}
       </button>
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>

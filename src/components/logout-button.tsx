@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function LogoutButton() {
+export default function LogoutButton({ label }: { label: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +20,7 @@ export default function LogoutButton() {
       disabled={loading}
       className="text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white disabled:opacity-50"
     >
-      Abmelden
+      {label}
     </button>
   );
 }

@@ -2,18 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { allowedNextStatuses } from "@/lib/deals";
-import { formatDate } from "@/lib/format";
-import {
-  dealFlow,
-  dealStatusLabels,
-  deliveryModeLabels,
-  formatMoney,
-  formatWeight,
-  requestKindLabels,
-  routeLabel,
-  transportModeLabels,
-} from "@/lib/labels";
+import { allowedNextStatuses, dealFlow } from "@/lib/deals";
+import { formatDate, formatMoney, formatWeight, routeLabel } from "@/lib/format";
+import { getTranslations } from "@/lib/i18n/server";
+import { format } from "@/lib/i18n/config";
+import LoginRequired from "@/components/login-required";
 import DealActions from "./deal-actions";
 
 export default async function DealDetailPage({
@@ -21,20 +14,14 @@ export default async function DealDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await getCurrentUser();
+  const [user, { locale, dict }] = await Promise.all([
+    getCurrentUser(),
+    getTranslations(),
+  ]);
+  const t = dict.deals;
 
   if (!user) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <p>
-          Bitte{" "}
-          <Link href="/login" className="underline">
-            anmelden
-          </Link>
-          , um diese Abmachung zu sehen.
-        </p>
-      </div>
-    );
+    return <LoginRequired t={dict.auth} />;
   }
 
   const { id } = await params;
@@ -62,15 +49,14 @@ export default async function DealDetailPage({
     <div className="mx-auto max-w-2xl px-4 py-10">
       <p className="text-sm text-neutral-500">
         {iAmTraveler
-          ? `Du transportierst für ${deal.requester.name}`
-          : `${deal.traveler.name} transportiert für dich`}
+          ? format(t.youTransportFor, { name: deal.requester.name })
+          : format(t.transportBy, { name: deal.traveler.name })}
       </p>
       <h1 className="mt-1 text-2xl font-bold">{deal.request.itemDescription}</h1>
 
-      {/* Fortschritt */}
       {cancelled ? (
         <p className="mt-6 rounded-lg bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
-          Diese Abmachung wurde abgebrochen.
+          {t.cancelled}
         </p>
       ) : (
         <ol className="mt-6 flex flex-wrap gap-2 text-xs">
@@ -85,7 +71,7 @@ export default async function DealDetailPage({
                     : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800"
                 }`}
               >
-                {dealStatusLabels[status]}
+                {dict.enums.dealStatus[status]}
               </li>
             );
           })}
@@ -93,10 +79,13 @@ export default async function DealDetailPage({
       )}
 
       <dl className="mt-8 grid grid-cols-2 gap-4 text-sm">
-        <Detail label="Art" value={requestKindLabels[deal.request.kind]} />
-        <Detail label="Honorar" value={formatMoney(deal.rewardCents) ?? "verhandelbar"} />
+        <Detail label={t.kind} value={dict.enums.requestKind[deal.request.kind]} />
         <Detail
-          label="Route der Reise"
+          label={t.fee}
+          value={formatMoney(deal.rewardCents, locale) ?? dict.common.negotiable}
+        />
+        <Detail
+          label={t.tripRoute}
           value={routeLabel(
             deal.trip.fromCity,
             deal.trip.fromCountry,
@@ -105,16 +94,16 @@ export default async function DealDetailPage({
           )}
         />
         <Detail
-          label="Reisedatum"
-          value={`${transportModeLabels[deal.trip.transportMode]}, ${formatDate(deal.trip.travelDate)}`}
+          label={t.travelDate}
+          value={`${dict.enums.transportMode[deal.trip.transportMode]}, ${formatDate(deal.trip.travelDate, locale)}`}
         />
-        <Detail label="Übergabe" value={deliveryModeLabels[deal.deliveryMode]} />
+        <Detail label={t.handover} value={dict.enums.deliveryMode[deal.deliveryMode]} />
         <Detail
-          label="Gewicht"
-          value={formatWeight(deal.request.weightKg) ?? "unbekannt"}
+          label={t.weight}
+          value={formatWeight(deal.request.weightKg, locale) ?? dict.common.unknown}
         />
         {deal.request.deadline && (
-          <Detail label="Deadline" value={formatDate(deal.request.deadline)} />
+          <Detail label={t.deadline} value={formatDate(deal.request.deadline, locale)} />
         )}
       </dl>
 
@@ -125,12 +114,16 @@ export default async function DealDetailPage({
       )}
 
       <div className="mt-8 space-y-4 border-t border-neutral-200 pt-6 dark:border-neutral-800">
-        <DealActions dealId={deal.id} allowed={allowed} />
+        <DealActions
+          dealId={deal.id}
+          allowed={allowed}
+          actionLabels={dict.enums.dealAction}
+          pendingLabel={dict.common.loading}
+          failedLabel={t.stepFailed}
+        />
 
         {allowed.length === 0 && !cancelled && deal.status !== "CONFIRMED" && (
-          <p className="text-sm text-neutral-500">
-            Jetzt ist die andere Seite dran.
-          </p>
+          <p className="text-sm text-neutral-500">{t.otherSideTurn}</p>
         )}
 
         {deal.conversation && (
@@ -138,14 +131,12 @@ export default async function DealDetailPage({
             href={`/chat/${deal.conversation.id}`}
             className="inline-block text-sm font-medium underline"
           >
-            Chat zu dieser Abmachung öffnen →
+            {t.openChat}
           </Link>
         )}
 
         <p className="rounded-lg border border-neutral-200 p-3 text-xs text-neutral-500 dark:border-neutral-800">
-          Die Zahlung läuft aktuell direkt zwischen euch – die Plattform hält kein
-          Geld treuhänderisch und prüft keine Identitäten. Beides braucht einen
-          Zahlungs- und einen Ausweis-Dienstleister.
+          {t.disclaimer}
         </p>
       </div>
     </div>

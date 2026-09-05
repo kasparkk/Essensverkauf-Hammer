@@ -1,7 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getTranslations } from "@/lib/i18n/server";
+import { format } from "@/lib/i18n/config";
+import LoginRequired from "@/components/login-required";
 import ChatThread from "./chat-thread";
 
 export default async function ChatDetailPage({
@@ -9,20 +11,11 @@ export default async function ChatDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await getCurrentUser();
+  const [user, { dict }] = await Promise.all([getCurrentUser(), getTranslations()]);
+  const t = dict.chat;
 
   if (!user) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <p>
-          Bitte{" "}
-          <Link href="/login" className="underline">
-            anmelden
-          </Link>
-          , um diesen Chat zu sehen.
-        </p>
-      </div>
-    );
+    return <LoginRequired t={dict.auth} />;
   }
 
   const { id } = await params;
@@ -47,15 +40,17 @@ export default async function ChatDetailPage({
 
   const otherUser = conversation.participants.find((p) => p.userId !== user.id)?.user;
   const context = conversation.trip
-    ? `Reise: ${conversation.trip.fromCountry} → ${conversation.trip.toCountry}`
+    ? format(t.tripContext, {
+        route: `${conversation.trip.fromCountry} → ${conversation.trip.toCountry}`,
+      })
     : conversation.request
-      ? `Anfrage: ${conversation.request.itemDescription}`
+      ? format(t.requestContext, { item: conversation.request.itemDescription })
       : "";
 
   return (
     <div className="mx-auto flex h-[calc(100vh-57px)] max-w-2xl flex-col px-4 py-6">
       <div className="border-b border-neutral-200 pb-3 dark:border-neutral-800">
-        <h1 className="text-xl font-bold">{otherUser?.name ?? "Unbekannt"}</h1>
+        <h1 className="text-xl font-bold">{otherUser?.name ?? t.unknownUser}</h1>
         <p className="text-sm text-neutral-500">{context}</p>
       </div>
 
@@ -63,6 +58,7 @@ export default async function ChatDetailPage({
         conversationId={conversation.id}
         currentUserId={user.id}
         initialMessages={conversation.messages}
+        t={t}
       />
     </div>
   );

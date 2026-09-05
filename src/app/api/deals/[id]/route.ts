@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getErrors } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/auth";
 import { allowedNextStatuses } from "@/lib/deals";
 
@@ -12,9 +13,10 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const e = await getErrors();
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Bitte zuerst anmelden" }, { status: 401 });
+    return NextResponse.json({ error: e.notLoggedIn }, { status: 401 });
   }
 
   const { id } = await params;
@@ -30,7 +32,7 @@ export async function GET(
   });
 
   if (!deal || (deal.requesterId !== user.id && deal.travelerId !== user.id)) {
-    return NextResponse.json({ error: "Abmachung nicht gefunden" }, { status: 404 });
+    return NextResponse.json({ error: e.dealNotFound }, { status: 404 });
   }
 
   return NextResponse.json({
@@ -43,27 +45,28 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const e = await getErrors();
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Bitte zuerst anmelden" }, { status: 401 });
+    return NextResponse.json({ error: e.notLoggedIn }, { status: 401 });
   }
 
   const { id } = await params;
   const body = await request.json().catch(() => null);
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ungültiger Status" }, { status: 400 });
+    return NextResponse.json({ error: e.invalidStatus }, { status: 400 });
   }
 
   const deal = await prisma.deal.findUnique({ where: { id } });
   if (!deal || (deal.requesterId !== user.id && deal.travelerId !== user.id)) {
-    return NextResponse.json({ error: "Abmachung nicht gefunden" }, { status: 404 });
+    return NextResponse.json({ error: e.dealNotFound }, { status: 404 });
   }
 
   const nextStatus = parsed.data.status;
   if (!allowedNextStatuses(deal, user.id).includes(nextStatus)) {
     return NextResponse.json(
-      { error: "Dieser Schritt ist für dich hier nicht möglich" },
+      { error: e.stepNotAllowed },
       { status: 403 }
     );
   }

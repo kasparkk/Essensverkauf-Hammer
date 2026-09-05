@@ -2,12 +2,21 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { transportModeLabels } from "@/lib/labels";
 import type { TransportMode } from "@/generated/prisma/client";
+import type { Dictionary } from "@/lib/i18n/types";
 
-const modes = Object.keys(transportModeLabels) as TransportMode[];
+const modes: TransportMode[] = ["FLIGHT", "TRAIN", "CAR", "BUS"];
 
-export default function NewTripForm() {
+const inputClass =
+  "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
+
+export default function NewTripForm({
+  t,
+  transportModeLabels,
+}: {
+  t: Dictionary["trips"];
+  transportModeLabels: Dictionary["enums"]["transportMode"];
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,7 +47,7 @@ export default function NewTripForm() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Reise konnte nicht gespeichert werden");
+      setError(data.error ?? t.saveFailed);
       return;
     }
 
@@ -49,12 +58,8 @@ export default function NewTripForm() {
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-5">
       <label className="block">
-        <span className="block text-sm font-medium">Verkehrsmittel</span>
-        <select
-          name="transportMode"
-          defaultValue="FLIGHT"
-          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white"
-        >
+        <span className="block text-sm font-medium">{t.transportMode}</span>
+        <select name="transportMode" defaultValue="FLIGHT" className={inputClass}>
           {modes.map((mode) => (
             <option key={mode} value={mode}>
               {transportModeLabels[mode]}
@@ -64,39 +69,36 @@ export default function NewTripForm() {
       </label>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Von (Land)" name="fromCountry" required />
-        <Field label="Von (Stadt)" name="fromCity" />
-        <Field label="Nach (Land)" name="toCountry" required />
-        <Field label="Nach (Stadt)" name="toCity" />
+        <Field label={t.fromCountry} name="fromCountry" required />
+        <Field label={t.fromCity} name="fromCity" />
+        <Field label={t.toCountry} name="toCountry" required />
+        <Field label={t.toCity} name="toCity" />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Reisedatum" name="travelDate" type="date" required />
+        <Field label={t.travelDate} name="travelDate" type="date" required />
         <Field
-          label="Freier Platz (kg)"
+          label={t.capacity}
           name="capacityKg"
           type="number"
           step="0.5"
           min="0"
-          placeholder="z. B. 5"
+          placeholder={t.capacityPlaceholder}
         />
       </div>
 
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" name="offersPostal" className="mt-1" />
-        <span>
-          Ich würde am Ziel auch bei der Post abgeben (letzte Meile per Paketdienst),
-          statt persönlich zu übergeben.
-        </span>
+        <span>{t.postalOffer}</span>
       </label>
 
       <label className="block">
-        <span className="block text-sm font-medium">Notizen (optional)</span>
+        <span className="block text-sm font-medium">{t.notes}</span>
         <textarea
           name="notes"
           rows={3}
-          placeholder="z. B. nur Handgepäck, keine Flüssigkeiten"
-          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white"
+          placeholder={t.notesPlaceholder}
+          className={inputClass}
         />
       </label>
 
@@ -106,7 +108,7 @@ export default function NewTripForm() {
         disabled={loading}
         className="w-full rounded-full bg-neutral-900 px-4 py-2.5 font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
       >
-        {loading ? "Wird gespeichert…" : "Reise veröffentlichen"}
+        {loading ? t.submitPending : t.submit}
       </button>
     </form>
   );
@@ -120,11 +122,7 @@ function Field({
   return (
     <label className="block">
       <span className="block text-sm font-medium">{label}</span>
-      <input
-        name={name}
-        {...props}
-        className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white"
-      />
+      <input name={name} {...props} className={inputClass} />
     </label>
   );
 }

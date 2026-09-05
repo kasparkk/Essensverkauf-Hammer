@@ -2,16 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatMoney, formatWeight, routeLabel } from "@/lib/format";
 import { findTripsForRequest } from "@/lib/matching";
-import {
-  deliveryModeLabels,
-  formatMoney,
-  formatWeight,
-  requestKindLabels,
-  routeLabel,
-  transportModeLabels,
-} from "@/lib/labels";
+import { getTranslations } from "@/lib/i18n/server";
+import { format } from "@/lib/i18n/config";
 import ProposeDealButton from "@/components/propose-deal-button";
 import MatchReasons from "@/components/match-reasons";
 
@@ -20,7 +14,9 @@ export default async function RequestDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, { locale, dict }] = await Promise.all([params, getTranslations()]);
+  const t = dict.requests;
+
   const [itemRequest, user] = await Promise.all([
     prisma.request.findUnique({
       where: { id },
@@ -35,8 +31,6 @@ export default async function RequestDetailPage({
 
   const isOwner = user?.id === itemRequest.userId;
 
-  // Treffer und eigene Reisen parallel laden - je nach Rolle wird nur eines
-  // davon gebraucht, beides ist aber günstig.
   const [candidateTrips, myTrips] = await Promise.all([
     prisma.trip.findMany({
       where: { userId: { not: itemRequest.userId } },
@@ -51,23 +45,23 @@ export default async function RequestDetailPage({
   ]);
 
   const matches = findTripsForRequest(itemRequest, candidateTrips).slice(0, 10);
-  const reward = formatMoney(itemRequest.rewardCents);
-  const value = formatMoney(itemRequest.itemValueCents);
+  const reward = formatMoney(itemRequest.rewardCents, locale);
+  const value = formatMoney(itemRequest.itemValueCents, locale);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium dark:bg-neutral-800">
-        {requestKindLabels[itemRequest.kind]}
+        {dict.enums.requestKind[itemRequest.kind]}
       </span>
       <h1 className="mt-2 text-2xl font-bold">{itemRequest.itemDescription}</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        Anfrage von {itemRequest.user.name}
-        {!itemRequest.isOpen && " · bereits vergeben"}
+        {format(t.detailFrom, { name: itemRequest.user.name })}
+        {!itemRequest.isOpen && ` · ${t.taken}`}
       </p>
 
       <dl className="mt-6 grid grid-cols-2 gap-4 text-sm">
         <Detail
-          label="Route"
+          label={t.route}
           value={routeLabel(
             itemRequest.fromCity,
             itemRequest.fromCountry,
@@ -76,13 +70,23 @@ export default async function RequestDetailPage({
           )}
         />
         <Detail
-          label="Bis wann"
-          value={itemRequest.deadline ? formatDate(itemRequest.deadline) : "flexibel"}
+          label={t.byWhen}
+          value={
+            itemRequest.deadline
+              ? formatDate(itemRequest.deadline, locale)
+              : dict.common.flexible
+          }
         />
-        <Detail label="Honorar" value={reward ?? "Verhandelbar"} />
-        <Detail label="Gewicht" value={formatWeight(itemRequest.weightKg) ?? "unbekannt"} />
-        <Detail label="Übergabe" value={deliveryModeLabels[itemRequest.deliveryMode]} />
-        {value && <Detail label="Warenwert" value={value} />}
+        <Detail label={dict.deals.fee} value={reward ?? dict.common.negotiable} />
+        <Detail
+          label={dict.deals.weight}
+          value={formatWeight(itemRequest.weightKg, locale) ?? dict.common.unknown}
+        />
+        <Detail
+          label={t.handover}
+          value={dict.enums.deliveryMode[itemRequest.deliveryMode]}
+        />
+        {value && <Detail label={t.value} value={value} />}
       </dl>
 
       {itemRequest.notes && (
@@ -94,10 +98,8 @@ export default async function RequestDetailPage({
       <div className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-800">
         {isOwner ? (
           <>
-            <h2 className="font-semibold">Passende Reisen</h2>
-            <p className="mt-1 text-sm text-neutral-500">
-              Nach Passung sortiert. Schlag einem Reisenden eine Abmachung vor.
-            </p>
+            <h2 className="font-semibold">{t.matchingTripsHeading}</h2>
+            <p className="mt-1 text-sm text-neutral-500">{t.matchingTripsIntro}</p>
             <ul className="mt-4 space-y-3">
               {matches.map(({ item: trip, score, reasons }) => (
                 <li
@@ -106,51 +108,56 @@ export default async function RequestDetailPage({
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <Link href={`/trips/${trip.id}`} className="font-medium hover:underline">
-                        {routeLabel(trip.fromCity, trip.fromCountry, trip.toCity, trip.toCountry)}
+                      <Link
+                        href={`/trips/${trip.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {routeLabel(
+                          trip.fromCity,
+                          trip.fromCountry,
+                          trip.toCity,
+                          trip.toCountry
+                        )}
                       </Link>
                       <p className="text-xs text-neutral-500">
-                        {transportModeLabels[trip.transportMode]} ·{" "}
-                        {formatDate(trip.travelDate)}
+                        {dict.enums.transportMode[trip.transportMode]} ·{" "}
+                        {formatDate(trip.travelDate, locale)}
                       </p>
                     </div>
                     <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium dark:bg-neutral-800">
-                      {score} Punkte
+                      {format(dict.deals.points, { score })}
                     </span>
                   </div>
-                  <MatchReasons reasons={reasons} />
+                  <MatchReasons reasons={reasons} dict={dict} />
                   <div className="mt-3">
                     <ProposeDealButton
                       fixed={{ requestId: itemRequest.id }}
                       counterpartId={trip.id}
                       isLoggedIn
                       compact
-                      label="Vorschlagen"
+                      label={dict.deals.proposeShort}
+                      t={dict.deals}
                     />
                   </div>
                 </li>
               ))}
               {matches.length === 0 && (
-                <p className="text-sm text-neutral-500">
-                  Noch keine passende Reise auf dieser Route. Sobald jemand eine
-                  einträgt, erscheint sie hier.
-                </p>
+                <p className="text-sm text-neutral-500">{t.noMatchingTrips}</p>
               )}
             </ul>
           </>
         ) : (
           <>
-            <h2 className="font-semibold">Du reist auf dieser Route?</h2>
-            <p className="mt-1 mb-3 text-sm text-neutral-500">
-              Wähl deine Reise und schlag eine Abmachung vor.
-            </p>
+            <h2 className="font-semibold">{t.travellingHeading}</h2>
+            <p className="mt-1 mb-3 text-sm text-neutral-500">{t.travellingIntro}</p>
             <ProposeDealButton
               fixed={{ requestId: itemRequest.id }}
               counterpartOptions={myTrips.map((trip) => ({
                 id: trip.id,
-                label: `${routeLabel(trip.fromCity, trip.fromCountry, trip.toCity, trip.toCountry)} · ${formatDate(trip.travelDate)}`,
+                label: `${routeLabel(trip.fromCity, trip.fromCountry, trip.toCity, trip.toCountry)} · ${formatDate(trip.travelDate, locale)}`,
               }))}
               isLoggedIn={Boolean(user)}
+              t={dict.deals}
             />
           </>
         )}

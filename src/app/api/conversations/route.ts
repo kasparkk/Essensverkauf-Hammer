@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getErrors, translateIssue } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/auth";
 
 const createConversationSchema = z
@@ -9,13 +10,14 @@ const createConversationSchema = z
     requestId: z.string().optional(),
   })
   .refine((data) => Boolean(data.tripId) !== Boolean(data.requestId), {
-    message: "Entweder tripId oder requestId angeben",
+    message: "eitherTripOrRequest",
   });
 
 export async function GET() {
+  const e = await getErrors();
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Bitte zuerst anmelden" }, { status: 401 });
+    return NextResponse.json({ error: e.notLoggedIn }, { status: 401 });
   }
 
   const conversations = await prisma.conversation.findMany({
@@ -48,16 +50,17 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const e = await getErrors();
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Bitte zuerst anmelden" }, { status: 401 });
+    return NextResponse.json({ error: e.notLoggedIn }, { status: 401 });
   }
 
   const body = await request.json().catch(() => null);
   const parsed = createConversationSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" },
+      { error: translateIssue(parsed.error.issues[0]?.message, e) },
       { status: 400 }
     );
   }
@@ -69,11 +72,11 @@ export async function POST(request: NextRequest) {
   if (tripId) {
     const trip = await prisma.trip.findUnique({ where: { id: tripId } });
     if (!trip) {
-      return NextResponse.json({ error: "Reise nicht gefunden" }, { status: 404 });
+      return NextResponse.json({ error: e.tripNotFound }, { status: 404 });
     }
     if (trip.userId === user.id) {
       return NextResponse.json(
-        { error: "Du kannst keine Konversation mit dir selbst starten" },
+        { error: e.noSelfConversation },
         { status: 400 }
       );
     }
@@ -81,11 +84,11 @@ export async function POST(request: NextRequest) {
   } else {
     const req = await prisma.request.findUnique({ where: { id: requestId! } });
     if (!req) {
-      return NextResponse.json({ error: "Anfrage nicht gefunden" }, { status: 404 });
+      return NextResponse.json({ error: e.requestNotFound }, { status: 404 });
     }
     if (req.userId === user.id) {
       return NextResponse.json(
-        { error: "Du kannst keine Konversation mit dir selbst starten" },
+        { error: e.noSelfConversation },
         { status: 400 }
       );
     }

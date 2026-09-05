@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getErrors, translateIssue } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/auth";
 
 const optionalText = (max: number) =>
@@ -18,7 +19,7 @@ const createRequestSchema = z.object({
   itemDescription: z.string().trim().min(2).max(500),
   deadline: z
     .string()
-    .refine((v) => v === "" || !Number.isNaN(Date.parse(v)), "Ungültiges Datum")
+    .refine((v) => v === "" || !Number.isNaN(Date.parse(v)), "invalidDate")
     .optional()
     .or(z.literal("")),
   weightKg: optionalNumber(1000),
@@ -53,16 +54,17 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const e = await getErrors();
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Bitte zuerst anmelden" }, { status: 401 });
+    return NextResponse.json({ error: e.notLoggedIn }, { status: 401 });
   }
 
   const body = await request.json().catch(() => null);
   const parsed = createRequestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" },
+      { error: translateIssue(parsed.error.issues[0]?.message, e) },
       { status: 400 }
     );
   }

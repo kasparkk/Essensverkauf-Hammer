@@ -43,6 +43,29 @@ nicht als Attrappe eingebaut:
 - **Foto-Verifikation bei der Übergabe** – braucht Datei-Upload und
   Blob-Storage.
 
+## Sprachen
+
+Die Oberfläche gibt es auf Englisch, Deutsch, Spanisch, Portugiesisch und
+Französisch - passend zu einer Plattform, auf der Leute über Ländergrenzen
+hinweg zusammenfinden.
+
+- Erkennung: erst die ausdrückliche Wahl im Cookie, sonst der
+  `Accept-Language`-Header des Browsers, sonst Englisch
+- Umschalten über die Auswahl in der Navigation (ein Jahr im Cookie gespeichert)
+- Auch die Fehler- und Validierungsmeldungen der API kommen in der Sprache des
+  Aufrufers zurück
+- Datums-, Gewichts- und Geldangaben werden pro Sprache formatiert
+  (`€25.00` vs. `25,00 €`)
+- Wörterbücher liegen unter `src/lib/i18n/dictionaries/`. Das englische ist die
+  Vorlage, aus der der `Dictionary`-Typ abgeleitet wird - ein fehlender oder
+  vertippter Schlüssel in einer Übersetzung ist damit ein Build-Fehler.
+- Treffer-Begründungen werden als Code plus Werte berechnet
+  (`src/lib/matching.ts`) und erst in der Oberfläche übersetzt
+
+Eine Sprache ergänzen: Wörterbuch unter `dictionaries/` anlegen, in
+`src/lib/i18n/config.ts` in `locales` und `localeNames` eintragen und in
+`src/lib/i18n/server.ts` sowie `src/lib/format.ts` registrieren.
+
 ## Tech-Stack
 
 - [Next.js](https://nextjs.org) (App Router) + TypeScript + Tailwind CSS

@@ -2,20 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getErrors, translateIssue } from "@/lib/i18n/server";
 import { createSessionToken, publicUser, SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
 
 const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Ungültige E-Mail-Adresse"),
-  password: z.string().min(1, "Passwort erforderlich"),
+  email: z.string().trim().toLowerCase().email("invalidEmail"),
+  password: z.string().min(1, "passwordRequired"),
 });
 
 export async function POST(request: NextRequest) {
+  const e = await getErrors();
   const body = await request.json().catch(() => null);
   const parsed = loginSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" },
+      { error: translateIssue(parsed.error.issues[0]?.message, e) },
       { status: 400 }
     );
   }
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
 
   if (!user || !valid) {
     return NextResponse.json(
-      { error: "E-Mail-Adresse oder Passwort ist falsch" },
+      { error: e.wrongCredentials },
       { status: 401 }
     );
   }

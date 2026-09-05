@@ -45,12 +45,11 @@ export function allowedNextStatuses(deal: Deal, userId: string): DealStatus[] {
     .map(([next]) => next as DealStatus);
 }
 
-/** Beschriftung für den Knopf, der diesen Schritt auslöst. */
-export const statusActionLabels: Record<DealStatus, string> = {
-  PROPOSED: "Vorschlagen",
-  ACCEPTED: "Zusagen",
-  PICKED_UP: "Gegenstand abgeholt",
-  DELIVERED: "Abgegeben / geliefert",
-  CONFIRMED: "Erhalt bestätigen",
-  CANCELLED: "Abbrechen",
-};
+/** Reihenfolge des Ablaufs für die Fortschrittsanzeige. */
+export const dealFlow: DealStatus[] = [
+  "PROPOSED",
+  "ACCEPTED",
+  "PICKED_UP",
+  "DELIVERED",
+  "CONFIRMED",
+];

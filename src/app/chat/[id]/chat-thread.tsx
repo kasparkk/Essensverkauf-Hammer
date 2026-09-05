@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import type { Dictionary } from "@/lib/i18n/types";
 
 type Message = {
   id: string;
@@ -16,10 +17,12 @@ export default function ChatThread({
   conversationId,
   currentUserId,
   initialMessages,
+  t,
 }: {
   conversationId: string;
   currentUserId: string;
   initialMessages: Message[];
+  t: Dictionary["chat"];
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
@@ -95,7 +98,7 @@ export default function ChatThread({
         })}
         {messages.length === 0 && (
           <p className="mt-8 text-center text-sm text-neutral-500">
-            Noch keine Nachrichten. Schreib die erste!
+            {t.noMessages}
           </p>
         )}
         <div ref={bottomRef} />
@@ -105,7 +108,7 @@ export default function ChatThread({
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Nachricht schreiben…"
+          placeholder={t.inputPlaceholder}
           className="flex-1 rounded-full border border-neutral-300 px-4 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white"
         />
         <button
@@ -113,7 +116,7 @@ export default function ChatThread({
           disabled={sending || !draft.trim()}
           className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
         >
-          Senden
+          {t.send}
         </button>
       </form>
     </div>

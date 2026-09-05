@@ -1,6 +1,17 @@
 import type { Request, Trip } from "@/generated/prisma/client";
+import { format } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/types";
 
-export type MatchReason = { label: string; good: boolean };
+/**
+ * Begründungen werden als Code plus Werte geliefert, nicht als fertiger Text -
+ * so bleibt die Bewertung sprachunabhängig und wird erst in der Oberfläche
+ * übersetzt.
+ */
+export type MatchReason = {
+  code: keyof Dictionary["match"];
+  params?: Record<string, string | number>;
+  good: boolean;
+};
 
 export type Match<T> = {
   item: T;
@@ -11,6 +22,11 @@ export type Match<T> = {
 const normalize = (value: string | null | undefined) =>
   (value ?? "").trim().toLowerCase();
 
+/** Übersetzt eine Begründung in die aktive Sprache. */
+export function translateReason(reason: MatchReason, dict: Dictionary): string {
+  return format(dict.match[reason.code], reason.params);
+}
+
 /**
  * Bewertet, wie gut eine Reise zu einer Anfrage passt.
  *
@@ -20,8 +36,6 @@ const normalize = (value: string | null | undefined) =>
  * Begründung angezeigt, damit die Reihenfolge nachvollziehbar bleibt.
  */
 export function scoreMatch(request: Request, trip: Trip): Match<Trip> | null {
-  const reasons: MatchReason[] = [];
-
   const fromCountryMatch = normalize(request.fromCountry) === normalize(trip.fromCountry);
   const toCountryMatch = normalize(request.toCountry) === normalize(trip.toCountry);
 
@@ -29,11 +43,14 @@ export function scoreMatch(request: Request, trip: Trip): Match<Trip> | null {
     return null;
   }
 
+  const reasons: MatchReason[] = [
+    {
+      code: "routeMatch",
+      params: { from: trip.fromCountry, to: trip.toCountry },
+      good: true,
+    },
+  ];
   let score = 50;
-  reasons.push({
-    label: `Route passt: ${trip.fromCountry} → ${trip.toCountry}`,
-    good: true,
-  });
 
   // Gleiche Städte sparen die letzte Meile komplett.
   const fromCityMatch =
@@ -45,11 +62,19 @@ export function scoreMatch(request: Request, trip: Trip): Match<Trip> | null {
 
   if (fromCityMatch) {
     score += 15;
-    reasons.push({ label: `Abholort identisch: ${trip.fromCity}`, good: true });
+    reasons.push({
+      code: "fromCityMatch",
+      params: { city: trip.fromCity ?? "" },
+      good: true,
+    });
   }
   if (toCityMatch) {
     score += 15;
-    reasons.push({ label: `Zielort identisch: ${trip.toCity}`, good: true });
+    reasons.push({
+      code: "toCityMatch",
+      params: { city: trip.toCity ?? "" },
+      good: true,
+    });
   }
 
   // Reise muss vor der Deadline stattfinden.
@@ -61,37 +86,31 @@ export function scoreMatch(request: Request, trip: Trip): Match<Trip> | null {
     if (travel > deadline) {
       score -= 40;
       reasons.push({
-        label: `Reise ist ${Math.abs(daysEarly)} Tage nach der Deadline`,
+        code: "afterDeadline",
+        params: { days: Math.abs(daysEarly) },
         good: false,
       });
     } else {
       // Je knapper vor der Deadline, desto besser - lange Vorlaufzeit ist
       // unpraktisch, wenn der Gegenstand noch beschafft werden muss.
       score += daysEarly <= 14 ? 15 : 5;
-      reasons.push({
-        label:
-          daysEarly === 0
-            ? "Reise genau am Stichtag"
-            : `${daysEarly} Tage vor der Deadline`,
-        good: true,
-      });
+      reasons.push(
+        daysEarly === 0
+          ? { code: "onDeadline", good: true }
+          : { code: "beforeDeadline", params: { days: daysEarly }, good: true }
+      );
     }
   }
 
   // Kapazität gegen Gewicht.
   if (request.weightKg != null && trip.capacityKg != null) {
+    const params = { capacity: trip.capacityKg, needed: request.weightKg };
     if (trip.capacityKg >= request.weightKg) {
       score += 10;
-      reasons.push({
-        label: `Platz reicht (${trip.capacityKg} kg frei, ${request.weightKg} kg nötig)`,
-        good: true,
-      });
+      reasons.push({ code: "capacityFits", params, good: true });
     } else {
       score -= 30;
-      reasons.push({
-        label: `Zu wenig Platz (${trip.capacityKg} kg frei, ${request.weightKg} kg nötig)`,
-        good: false,
-      });
+      reasons.push({ code: "capacityTooSmall", params, good: false });
     }
   }
 
@@ -99,13 +118,10 @@ export function scoreMatch(request: Request, trip: Trip): Match<Trip> | null {
   if (request.deliveryMode === "POSTAL") {
     if (trip.offersPostal) {
       score += 10;
-      reasons.push({ label: "Reisender gibt am Ziel bei der Post ab", good: true });
+      reasons.push({ code: "postalOffered", good: true });
     } else {
       score -= 20;
-      reasons.push({
-        label: "Anfrage will Postabgabe, Reisender bietet nur Übergabe",
-        good: false,
-      });
+      reasons.push({ code: "postalMissing", good: false });
     }
   }
 

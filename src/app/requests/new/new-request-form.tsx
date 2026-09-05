@@ -3,21 +3,30 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import type { RequestKind } from "@/generated/prisma/client";
-import { requestKindDescriptions, requestKindLabels } from "@/lib/labels";
+import type { Dictionary } from "@/lib/i18n/types";
 
 const kinds: RequestKind[] = ["RETRIEVAL", "SHOPPING", "TRANSPORT"];
 
-const itemPlaceholders: Record<RequestKind, string> = {
-  RETRIEVAL: "z. B. AirPods, im Hotel in Buenos Aires liegen geblieben",
-  SHOPPING: "z. B. 2 Packungen Yerba Mate, Marke Playadito",
-  TRANSPORT: "z. B. Aktenordner, DIN A4, ca. 2 kg",
-};
+const inputClass =
+  "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
 
-export default function NewRequestForm() {
+export default function NewRequestForm({
+  t,
+  enums,
+}: {
+  t: Dictionary["requests"];
+  enums: Dictionary["enums"];
+}) {
   const router = useRouter();
   const [kind, setKind] = useState<RequestKind>("RETRIEVAL");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const itemPlaceholders: Record<RequestKind, string> = {
+    RETRIEVAL: t.placeholderRetrieval,
+    SHOPPING: t.placeholderShopping,
+    TRANSPORT: t.placeholderTransport,
+  };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,7 +57,7 @@ export default function NewRequestForm() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Anfrage konnte nicht gespeichert werden");
+      setError(data.error ?? t.saveFailed);
       return;
     }
 
@@ -59,7 +68,7 @@ export default function NewRequestForm() {
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-5">
       <fieldset>
-        <legend className="text-sm font-medium">Worum geht es?</legend>
+        <legend className="text-sm font-medium">{t.kindQuestion}</legend>
         <div className="mt-2 grid gap-2 sm:grid-cols-3">
           {kinds.map((option) => (
             <label
@@ -78,9 +87,9 @@ export default function NewRequestForm() {
                 onChange={() => setKind(option)}
                 className="sr-only"
               />
-              <span className="font-medium">{requestKindLabels[option]}</span>
+              <span className="font-medium">{enums.requestKind[option]}</span>
               <span className="mt-1 block text-xs text-neutral-500">
-                {requestKindDescriptions[option]}
+                {enums.requestKindDescription[option]}
               </span>
             </label>
           ))}
@@ -89,63 +98,49 @@ export default function NewRequestForm() {
 
       <label className="block">
         <span className="block text-sm font-medium">
-          {kind === "SHOPPING" ? "Was soll gekauft werden?" : "Was soll transportiert werden?"}
+          {kind === "SHOPPING" ? t.itemQuestionShopping : t.itemQuestionOther}
         </span>
         <input
           name="itemDescription"
           required
           placeholder={itemPlaceholders[kind]}
-          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white"
+          className={inputClass}
         />
       </label>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field
-          label={kind === "SHOPPING" ? "Einkaufsland" : "Von (Land)"}
+          label={kind === "SHOPPING" ? t.shoppingCountry : t.fromCountry}
           name="fromCountry"
           required
         />
-        <Field label="Von (Stadt)" name="fromCity" />
-        <Field label="Nach (Land)" name="toCountry" required />
-        <Field label="Nach (Stadt)" name="toCity" />
+        <Field label={t.fromCity} name="fromCity" />
+        <Field label={t.toCountry} name="toCountry" required />
+        <Field label={t.toCity} name="toCity" />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="Bis wann?" name="deadline" type="date" />
-        <Field label="Gewicht (kg)" name="weightKg" type="number" step="0.1" min="0" />
-        <Field label="Honorar (€)" name="rewardEuro" type="number" step="1" min="0" />
+        <Field label={t.deadline} name="deadline" type="date" />
+        <Field label={t.weight} name="weightKg" type="number" step="0.1" min="0" />
+        <Field label={t.reward} name="rewardEuro" type="number" step="1" min="0" />
       </div>
 
       {kind === "SHOPPING" && (
-        <Field
-          label="Erwarteter Warenwert (€)"
-          name="itemValueEuro"
-          type="number"
-          step="1"
-          min="0"
-        />
+        <Field label={t.itemValue} name="itemValueEuro" type="number" step="1" min="0" />
       )}
 
       <label className="block">
-        <span className="block text-sm font-medium">Wie soll es ankommen?</span>
-        <select
-          name="deliveryMode"
-          defaultValue="EITHER"
-          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white"
-        >
-          <option value="EITHER">Übergabe oder Post – egal</option>
-          <option value="HANDOFF">Persönliche Übergabe</option>
-          <option value="POSTAL">Abgabe bei der Post am Ziel</option>
+        <span className="block text-sm font-medium">{t.deliveryQuestion}</span>
+        <select name="deliveryMode" defaultValue="EITHER" className={inputClass}>
+          <option value="EITHER">{enums.deliveryModeOption.EITHER}</option>
+          <option value="HANDOFF">{enums.deliveryModeOption.HANDOFF}</option>
+          <option value="POSTAL">{enums.deliveryModeOption.POSTAL}</option>
         </select>
       </label>
 
       <label className="block">
-        <span className="block text-sm font-medium">Notizen (optional)</span>
-        <textarea
-          name="notes"
-          rows={3}
-          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white"
-        />
+        <span className="block text-sm font-medium">{t.notes}</span>
+        <textarea name="notes" rows={3} className={inputClass} />
       </label>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -154,7 +149,7 @@ export default function NewRequestForm() {
         disabled={loading}
         className="w-full rounded-full bg-neutral-900 px-4 py-2.5 font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
       >
-        {loading ? "Wird gespeichert…" : "Anfrage veröffentlichen"}
+        {loading ? t.submitPending : t.submit}
       </button>
     </form>
   );
@@ -168,11 +163,7 @@ function Field({
   return (
     <label className="block">
       <span className="block text-sm font-medium">{label}</span>
-      <input
-        name={name}
-        {...props}
-        className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white"
-      />
+      <input name={name} {...props} className={inputClass} />
     </label>
   );
 }

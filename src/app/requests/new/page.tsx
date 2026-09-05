@@ -1,32 +1,20 @@
-import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { getTranslations } from "@/lib/i18n/server";
+import LoginRequired from "@/components/login-required";
 import NewRequestForm from "./new-request-form";
 
 export default async function NewRequestPage() {
-  const user = await getCurrentUser();
+  const [user, { dict }] = await Promise.all([getCurrentUser(), getTranslations()]);
 
   if (!user) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <p>
-          Bitte{" "}
-          <Link href="/login" className="underline">
-            anmelden
-          </Link>
-          , um eine Anfrage zu erstellen.
-        </p>
-      </div>
-    );
+    return <LoginRequired t={dict.auth} />;
   }
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="text-2xl font-bold">Anfrage erstellen</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        Beschreibe, was du vergessen hast oder mitgebracht bekommen möchtest,
-        damit Reisende dich kontaktieren können.
-      </p>
-      <NewRequestForm />
+      <h1 className="text-2xl font-bold">{dict.requests.newHeading}</h1>
+      <p className="mt-1 text-sm text-neutral-500">{dict.requests.newIntro}</p>
+      <NewRequestForm t={dict.requests} enums={dict.enums} />
     </div>
   );
 }

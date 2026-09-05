@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getErrors } from "@/lib/i18n/server";
 import { findRequestsForTrip } from "@/lib/matching";
 
 /** Offene Anfragen, die zu dieser Reise passen - beste zuerst. */
@@ -7,11 +8,12 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const e = await getErrors();
   const { id } = await params;
 
   const trip = await prisma.trip.findUnique({ where: { id } });
   if (!trip) {
-    return NextResponse.json({ error: "Reise nicht gefunden" }, { status: 404 });
+    return NextResponse.json({ error: e.tripNotFound }, { status: 404 });
   }
 
   const requests = await prisma.request.findMany({

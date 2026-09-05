@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getErrors } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const e = await getErrors();
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Bitte zuerst anmelden" }, { status: 401 });
+    return NextResponse.json({ error: e.notLoggedIn }, { status: 401 });
   }
 
   const { id } = await params;
@@ -23,7 +25,7 @@ export async function GET(
   });
 
   if (!conversation || !conversation.participants.some((p) => p.userId === user.id)) {
-    return NextResponse.json({ error: "Konversation nicht gefunden" }, { status: 404 });
+    return NextResponse.json({ error: e.conversationNotFound }, { status: 404 });
   }
 
   const otherUser =

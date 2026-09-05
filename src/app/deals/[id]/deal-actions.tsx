@@ -3,15 +3,21 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { DealStatus } from "@/generated/prisma/client";
-import { statusActionLabels } from "@/lib/deals";
+import type { Dictionary } from "@/lib/i18n/types";
 
 /** Knöpfe für die Schritte, die der angemeldete Nutzer gerade gehen darf. */
 export default function DealActions({
   dealId,
   allowed,
+  actionLabels,
+  pendingLabel,
+  failedLabel,
 }: {
   dealId: string;
   allowed: DealStatus[];
+  actionLabels: Dictionary["enums"]["dealAction"];
+  pendingLabel: string;
+  failedLabel: string;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState<DealStatus | null>(null);
@@ -35,7 +41,7 @@ export default function DealActions({
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Schritt nicht möglich");
+      setError(data.error ?? failedLabel);
       return;
     }
 
@@ -58,7 +64,7 @@ export default function DealActions({
                   : "rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
               }
             >
-              {pending === status ? "Moment…" : statusActionLabels[status]}
+              {pending === status ? pendingLabel : actionLabels[status]}
             </button>
           );
         })}

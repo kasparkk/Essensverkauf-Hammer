@@ -2,22 +2,19 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
+import { getTranslations } from "@/lib/i18n/server";
+import { format } from "@/lib/i18n/config";
+import LoginRequired from "@/components/login-required";
 
 export default async function ChatListPage() {
-  const user = await getCurrentUser();
+  const [user, { locale, dict }] = await Promise.all([
+    getCurrentUser(),
+    getTranslations(),
+  ]);
+  const t = dict.chat;
 
   if (!user) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <p>
-          Bitte{" "}
-          <Link href="/login" className="underline">
-            anmelden
-          </Link>
-          , um deine Chats zu sehen.
-        </p>
-      </div>
-    );
+    return <LoginRequired t={dict.auth} />;
   }
 
   const conversations = await prisma.conversation.findMany({
@@ -36,18 +33,23 @@ export default async function ChatListPage() {
     return new Date(bTime).getTime() - new Date(aTime).getTime();
   });
 
+  const [emptyBefore, emptyRest] = t.empty.split("{requests}");
+  const [emptyMiddle, emptyAfter] = (emptyRest ?? "").split("{trips}");
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold">Deine Chats</h1>
+      <h1 className="text-2xl font-bold">{t.listHeading}</h1>
 
       <ul className="mt-6 space-y-2">
         {sorted.map((c) => {
           const otherUser = c.participants.find((p) => p.userId !== user.id)?.user;
           const lastMessage = c.messages[0];
           const context = c.trip
-            ? `Reise: ${c.trip.fromCountry} → ${c.trip.toCountry}`
+            ? format(t.tripContext, {
+                route: `${c.trip.fromCountry} → ${c.trip.toCountry}`,
+              })
             : c.request
-              ? `Anfrage: ${c.request.itemDescription}`
+              ? format(t.requestContext, { item: c.request.itemDescription })
               : "";
 
           return (
@@ -57,10 +59,10 @@ export default async function ChatListPage() {
                 className="block rounded-xl border border-neutral-200 p-4 hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium">{otherUser?.name ?? "Unbekannt"}</p>
+                  <p className="font-medium">{otherUser?.name ?? t.unknownUser}</p>
                   {lastMessage && (
                     <span className="text-xs text-neutral-500">
-                      {formatDateTime(lastMessage.createdAt)}
+                      {formatDateTime(lastMessage.createdAt, locale)}
                     </span>
                   )}
                 </div>
@@ -76,15 +78,15 @@ export default async function ChatListPage() {
         })}
         {sorted.length === 0 && (
           <p className="text-neutral-500">
-            Noch keine Chats. Kontaktiere jemanden über eine{" "}
-            <Link href="/trips" className="underline">
-              Reise
-            </Link>{" "}
-            oder{" "}
+            {emptyBefore}
             <Link href="/requests" className="underline">
-              Anfrage
+              {t.emptyRequests}
             </Link>
-            .
+            {emptyMiddle}
+            <Link href="/trips" className="underline">
+              {t.emptyTrips}
+            </Link>
+            {emptyAfter}
           </p>
         )}
       </ul>

@@ -2,15 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatMoney, formatWeight, routeLabel } from "@/lib/format";
 import { findRequestsForTrip } from "@/lib/matching";
-import {
-  formatMoney,
-  formatWeight,
-  requestKindLabels,
-  routeLabel,
-  transportModeLabels,
-} from "@/lib/labels";
+import { getTranslations } from "@/lib/i18n/server";
+import { format } from "@/lib/i18n/config";
 import ProposeDealButton from "@/components/propose-deal-button";
 import MatchReasons from "@/components/match-reasons";
 
@@ -19,7 +14,9 @@ export default async function TripDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, { locale, dict }] = await Promise.all([params, getTranslations()]);
+  const t = dict.trips;
+
   const [trip, user] = await Promise.all([
     prisma.trip.findUnique({
       where: { id },
@@ -51,21 +48,26 @@ export default async function TripDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <p className="text-sm text-neutral-500">Reise von {trip.user.name}</p>
+      <p className="text-sm text-neutral-500">
+        {format(t.detailFrom, { name: trip.user.name })}
+      </p>
       <h1 className="mt-1 text-2xl font-bold">
         {routeLabel(trip.fromCity, trip.fromCountry, trip.toCity, trip.toCountry)}
       </h1>
 
       <dl className="mt-6 grid grid-cols-2 gap-4 text-sm">
-        <Detail label="Verkehrsmittel" value={transportModeLabels[trip.transportMode]} />
-        <Detail label="Datum" value={formatDate(trip.travelDate)} />
         <Detail
-          label="Freier Platz"
-          value={formatWeight(trip.capacityKg) ?? "nicht angegeben"}
+          label={t.transportMode}
+          value={dict.enums.transportMode[trip.transportMode]}
+        />
+        <Detail label={t.date} value={formatDate(trip.travelDate, locale)} />
+        <Detail
+          label={t.spareSpace}
+          value={formatWeight(trip.capacityKg, locale) ?? t.notSpecified}
         />
         <Detail
-          label="Postabgabe am Ziel"
-          value={trip.offersPostal ? "ja" : "nur persönliche Übergabe"}
+          label={t.postalAtDestination}
+          value={trip.offersPostal ? dict.common.yes : t.handoverOnly}
         />
       </dl>
 
@@ -78,13 +80,11 @@ export default async function TripDetailPage({
       <div className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-800">
         {isOwner ? (
           <>
-            <h2 className="font-semibold">Anfragen, die auf deine Reise passen</h2>
-            <p className="mt-1 text-sm text-neutral-500">
-              Nach Passung sortiert – hier verdienst du an freiem Platz.
-            </p>
+            <h2 className="font-semibold">{t.matchingRequestsHeading}</h2>
+            <p className="mt-1 text-sm text-neutral-500">{t.matchingRequestsIntro}</p>
             <ul className="mt-4 space-y-3">
               {matches.map(({ item: req, score, reasons }) => {
-                const reward = formatMoney(req.rewardCents);
+                const reward = formatMoney(req.rewardCents, locale);
                 return (
                   <li
                     key={req.id}
@@ -93,7 +93,7 @@ export default async function TripDetailPage({
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium dark:bg-neutral-800">
-                          {requestKindLabels[req.kind]}
+                          {dict.enums.requestKind[req.kind]}
                         </span>
                         <Link
                           href={`/requests/${req.id}`}
@@ -102,40 +102,44 @@ export default async function TripDetailPage({
                           {req.itemDescription}
                         </Link>
                         <p className="text-xs text-neutral-500">
-                          {routeLabel(req.fromCity, req.fromCountry, req.toCity, req.toCountry)}
+                          {routeLabel(
+                            req.fromCity,
+                            req.fromCountry,
+                            req.toCity,
+                            req.toCountry
+                          )}
                         </p>
                       </div>
                       <div className="text-right">
                         {reward && <p className="font-semibold">{reward}</p>}
-                        <span className="text-xs text-neutral-500">{score} Punkte</span>
+                        <span className="text-xs text-neutral-500">
+                          {format(dict.deals.points, { score })}
+                        </span>
                       </div>
                     </div>
-                    <MatchReasons reasons={reasons} />
+                    <MatchReasons reasons={reasons} dict={dict} />
                     <div className="mt-3">
                       <ProposeDealButton
                         fixed={{ tripId: trip.id }}
                         counterpartId={req.id}
                         isLoggedIn
                         compact
-                        label="Mitnehmen anbieten"
+                        label={dict.deals.offerToCarry}
+                        t={dict.deals}
                       />
                     </div>
                   </li>
                 );
               })}
               {matches.length === 0 && (
-                <p className="text-sm text-neutral-500">
-                  Aktuell keine offene Anfrage auf dieser Route.
-                </p>
+                <p className="text-sm text-neutral-500">{t.noMatchingRequests}</p>
               )}
             </ul>
           </>
         ) : (
           <>
-            <h2 className="font-semibold">Du brauchst etwas auf dieser Route?</h2>
-            <p className="mt-1 mb-3 text-sm text-neutral-500">
-              Wähl deine Anfrage und frag den Reisenden.
-            </p>
+            <h2 className="font-semibold">{t.needHeading}</h2>
+            <p className="mt-1 mb-3 text-sm text-neutral-500">{t.needIntro}</p>
             <ProposeDealButton
               fixed={{ tripId: trip.id }}
               counterpartOptions={myRequests.map((req) => ({
@@ -143,7 +147,8 @@ export default async function TripDetailPage({
                 label: req.itemDescription,
               }))}
               isLoggedIn={Boolean(user)}
-              label="Anfrage vorschlagen"
+              label={dict.deals.proposeRequest}
+              t={dict.deals}
             />
           </>
         )}
