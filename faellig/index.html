@@ -5107,6 +5107,16 @@
 <script>
 // Service Worker registrieren: ermoeglicht Offline-Betrieb und die Installation.
 if ("serviceWorker" in navigator) {
+  // Gab es beim Laden schon einen Service Worker? Dann ist ein spaeterer
+  // Wechsel ein Update -- und die gerade sichtbare Seite ist die alte.
+  // Einmal neu laden, damit man die neue Fassung auch wirklich sieht.
+  var hatteSchonEinen = !!navigator.serviceWorker.controller;
+  var schonNeugeladen = false;
+  navigator.serviceWorker.addEventListener("controllerchange", function () {
+    if (!hatteSchonEinen || schonNeugeladen) return;
+    schonNeugeladen = true;
+    window.location.reload();
+  });
   window.addEventListener("load", function () {
     navigator.serviceWorker.register("sw.js").catch(function () {});
   });
