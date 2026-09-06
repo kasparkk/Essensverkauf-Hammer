@@ -934,6 +934,67 @@
 
   .task__vertragsinfo { color: var(--ink-faint); }
 
+  /* ---------- "Was jetzt?" ---------- */
+
+  .jetzt {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+
+  .jetzt__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .jetzt__sache {
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+
+  .jetzt__grund {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    line-height: 1.45;
+    margin-top: 5px;
+  }
+
+  .jetzt__knoepfe { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+  .jetzt[data-leer="true"] { background: var(--surface); border-color: var(--line); }
+  .jetzt[data-leer="true"] .jetzt__sache { color: var(--ink-faint); }
+
+  /* ---------- Entscheiden ---------- */
+
+  .ent-zeile { align-items: center; }
+
+  .ent-fragen { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+
+  .ent-frage {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface-2);
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 0.92rem;
+  }
+
+  .ent-frage > span { flex: 1 1 auto; overflow-wrap: anywhere; }
+  .ent-frage > button { flex: none; white-space: nowrap; }
+
+  .ent-seg { flex-wrap: wrap; }
+
   /* Summe aller wiederkehrenden Kosten */
   .abos {
     display: none;
@@ -1283,6 +1344,7 @@
     <button class="tab" id="tabNotizen" type="button" role="tab" aria-selected="false" aria-controls="paneNotizen">Notizen</button>
     <button class="tab" id="tabTexte" type="button" role="tab" aria-selected="false" aria-controls="paneTexte">Texte</button>
     <button class="tab" id="tabAnrufe" type="button" role="tab" aria-selected="false" aria-controls="paneAnrufe">Anrufe</button>
+    <button class="tab" id="tabEntscheiden" type="button" role="tab" aria-selected="false" aria-controls="paneEntscheiden">Entscheiden</button>
   </div>
 
   <section class="add">
@@ -1323,6 +1385,11 @@
 
   <div class="pane is-active" id="paneFristen" role="tabpanel" aria-labelledby="tabFristen">
 
+
+  <div class="jetzt" id="jetzt">
+    <div class="jetzt__label">Was jetzt?</div>
+    <div class="jetzt__body" id="jetztBody"></div>
+  </div>
 
   <main id="list"></main>
 
@@ -1430,6 +1497,15 @@
     <div id="callSheet"></div>
   </div><!-- /paneAnrufe -->
 
+  <div class="pane" id="paneEntscheiden" role="tabpanel" aria-labelledby="tabEntscheiden">
+    <div class="noteadd">
+      <button class="btn--primary noteadd__btn" id="entNeu" type="button">+ Neue Entscheidung</button>
+      <span class="noteadd__hint">Für alles, wo du feststeckst. Die App entscheidet nicht für dich — sie räumt weg, was dich blockiert.</span>
+    </div>
+    <div id="entListe"></div>
+    <div id="entBogen"></div>
+  </div><!-- /paneEntscheiden -->
+
   <details class="backup" id="backup">
     <summary>Sichern &amp; Übertragen</summary>
     <div class="backup__body">
@@ -1437,7 +1513,7 @@
       <div class="backup__block">
         <span class="backup__title">Sichern</span>
         <span class="backup__hint">
-          Speichert alles — Fristen, To-dos, Abos, Notizen, eigene Vorlagen und deinen Namen — in einer Datei.
+          Speichert alles — Fristen, To-dos, Abos, Notizen, eigene Vorlagen, Entscheidungen und deinen Namen — in einer Datei.
           Falls das Speichern blockiert wird, kopier einfach den Text darunter.
         </span>
         <div class="backup__row">
@@ -2152,6 +2228,83 @@
 
   var bearbeiteId = null; // Eintrag, der gerade bearbeitet wird
 
+  // --- "Was jetzt?" ---
+  //
+  // Nennt genau eine Sache. Die Regel ist fest und nachvollziehbar, nicht
+  // zufaellig: zweimal hinschauen muss dieselbe Antwort geben, sonst traut
+  // man ihr nicht. Reihenfolge: ueberfaellig, heute, als naechstes faellig,
+  // sonst das aelteste To-do.
+  function wasJetzt(zeilen, todos) {
+    function alsErstes(liste) {
+      return liste.slice().sort(function (a, b) {
+        if (a.dueKey !== b.dueKey) return a.dueKey < b.dueKey ? -1 : 1;
+        if (a.isFixed !== b.isFixed) return a.isFixed ? -1 : 1;
+        return a.createdAt - b.createdAt;
+      })[0];
+    }
+
+    var ueber = zeilen.filter(function (r) { return bucketOf(r) === "over"; });
+    if (ueber.length) {
+      var u = alsErstes(ueber);
+      var tage = Math.abs(daysUntil(u.dueKey));
+      return { zeile: u, grund: ueber.length > 1
+        ? "Am längsten überfällig — " + tage + (tage === 1 ? " Tag" : " Tage") + ". " +
+          (ueber.length - 1) + " weitere warten auch."
+        : "Seit " + tage + (tage === 1 ? " Tag" : " Tagen") + " überfällig." };
+    }
+
+    var heute = zeilen.filter(function (r) { return bucketOf(r) === "today"; });
+    if (heute.length) {
+      return { zeile: alsErstes(heute), grund: heute.length > 1
+        ? "Heute fällig, zusammen mit " + (heute.length - 1) + " anderen." : "Heute fällig." };
+    }
+
+    if (zeilen.length) {
+      var naechste = alsErstes(zeilen);
+      var hin = daysUntil(naechste.dueKey);
+      return { zeile: naechste, grund: "Nichts ist überfällig. Das hier kommt als Nächstes — in " +
+        hin + (hin === 1 ? " Tag" : " Tagen") + ". Du kannst es jetzt wegräumen." };
+    }
+
+    if (todos.length) {
+      var alt = todos.slice().sort(function (a, b) { return a.createdAt - b.createdAt; })[0];
+      return { zeile: { kind: "item", item: alt, dueKey: null },
+               grund: todos.length > 1
+                 ? "Keine Termine offen. Das hier wartet am längsten von " + todos.length + " To-dos."
+                 : "Keine Termine offen — nur dieses eine To-do." };
+    }
+
+    return null;
+  }
+
+  function renderJetzt(zeilen, todos) {
+    var el = document.getElementById("jetztBody");
+    var kasten = document.getElementById("jetzt");
+    var w = wasJetzt(zeilen, todos);
+
+    if (!w) {
+      kasten.dataset.leer = "true";
+      el.innerHTML = '<div class="jetzt__sache">Nichts. Wirklich nichts.</div>' +
+        '<div class="jetzt__grund">Keine Fristen, keine To-dos. Mach was anderes.</div>';
+      return;
+    }
+
+    kasten.dataset.leer = "false";
+    var i = w.zeile.item;
+    var kuend = w.zeile.kind === "kuend";
+    var titel = (i.subject ? i.subject + ": " : "") + (i.text || "(ohne Text)") + (kuend ? " kündigen" : "");
+
+    el.innerHTML =
+      '<div class="jetzt__sache">' + esc(titel) + "</div>" +
+      '<div class="jetzt__grund">' + esc(w.grund) + "</div>" +
+      '<div class="jetzt__knoepfe">' +
+        (kuend
+          ? '<button class="btn btn--primary" type="button" data-act="kuendtext" data-id="' + i.id + '">Kündigung schreiben</button>'
+          : '<button class="btn btn--primary" type="button" data-act="done" data-id="' + i.id + '">Erledigt</button>' +
+            '<button class="btn" type="button" data-act="write" data-id="' + i.id + '">Text schreiben</button>') +
+      "</div>";
+  }
+
   function renderTask(item) {
     if (item.id === bearbeiteId) return renderBearbeiten(item);
     var bucket = bucketOf(item);
@@ -2264,6 +2417,8 @@
       var b = bucketOf(r);
       return b === "over" || b === "today";
     }).length;
+
+    renderJetzt(zeilen, todos);
 
     countNum.textContent = urgent > 0 ? urgent : zeilen.length;
     countLabel.textContent = urgent > 0 ? (urgent === 1 ? "für heute" : "für heute") : "offen";
@@ -3348,7 +3503,8 @@
     abos:    [document.getElementById("tabAbos"),    document.getElementById("paneAbos")],
     notizen: [document.getElementById("tabNotizen"), document.getElementById("paneNotizen")],
     texte:   [document.getElementById("tabTexte"),   document.getElementById("paneTexte")],
-    anrufe:  [document.getElementById("tabAnrufe"),  document.getElementById("paneAnrufe")]
+    anrufe:  [document.getElementById("tabAnrufe"),  document.getElementById("paneAnrufe")],
+    entscheiden: [document.getElementById("tabEntscheiden"), document.getElementById("paneEntscheiden")]
   };
 
   var addPanel = document.querySelector(".add");
@@ -3985,6 +4141,307 @@
   renderNotes();
 
 
+  /* ======================= Entscheiden ======================= */
+
+  var ENT_KEY = "faellig-entscheidungen-v1";
+
+  function loadEnt() {
+    try {
+      var r = localStorage.getItem(ENT_KEY);
+      var a = r ? JSON.parse(r) : [];
+      return Array.isArray(a) ? a : [];
+    } catch (e) { return []; }
+  }
+
+  function saveEnt() {
+    try { localStorage.setItem(ENT_KEY, JSON.stringify(entscheidungen)); } catch (e) {}
+  }
+
+  var entscheidungen = loadEnt();
+  var entOffen = null; // Entscheidung, deren Bogen gerade aufgeschlagen ist
+
+  var entListeEl = document.getElementById("entListe");
+  var entBogenEl = document.getElementById("entBogen");
+
+  function entById(id) { return entscheidungen.find(function (e) { return e.id === id; }); }
+
+  function zeilenAus(text) {
+    return String(text || "").split("\n").map(function (z) { return z.trim(); }).filter(Boolean);
+  }
+
+  // Die nuetzlichste Frage bei einer Entscheidung ist nicht "was ist besser",
+  // sondern "was kostet es mich, wenn ich falsch liege".
+  var UMKEHRBAR = {
+    leicht: {
+      wort: "leicht rückgängig",
+      rat: "Dann entscheide jetzt, sofort. Weiter nachdenken kostet dich mehr Zeit als der Fehlgriff — du kannst es ja ändern."
+    },
+    aufwand: {
+      wort: "nur mit Aufwand",
+      rat: "Eine Nacht drüber schlafen reicht. Setz dir unten eine Frist und halte sie ein."
+    },
+    endgueltig: {
+      wort: "endgültig",
+      rat: "Hier lohnt sich Sorgfalt. Klär erst, was dir noch fehlt — aber setz trotzdem eine Frist, sonst entscheidet die Zeit für dich."
+    }
+  };
+
+  function entMeldung(txt, ok) {
+    var el = document.getElementById("entMsg");
+    if (!el) return;
+    meldung(el, txt, ok === undefined ? true : ok);
+    setTimeout(function () { if (el) meldung(el, ""); }, 3000);
+  }
+
+  function renderEntListe() {
+    if (!entscheidungen.length) {
+      entListeEl.innerHTML = '<div class="empty"><div class="empty__big">Nichts offen.</div>' +
+        '<div class="empty__hint">Wenn du irgendwo feststeckst, leg es hier ab — dann steht es wenigstens nicht mehr nur im Kopf.</div></div>';
+      return;
+    }
+
+    function zeile(e) {
+      var fertig = !!e.entschiedenAm;
+      var unter = fertig
+        ? "Entschieden: " + (e.ergebnis || "—")
+        : (e.fristKey ? "Bis " + formatDueLang(e.fristKey) : "Ohne Frist");
+      return '<div class="task ent-zeile" data-tone="' + (!fertig && e.fristKey && daysUntil(e.fristKey) < 0 ? "over" : "") + '">' +
+        '<div class="task__body">' +
+          '<div class="task__text">' + esc(e.frage || "(ohne Frage)") + "</div>" +
+          '<div class="task__meta"><span' + (fertig ? ' class="task__subject"' : "") + ">" + esc(unter) + "</span></div>" +
+        "</div>" +
+        '<button class="task__write" type="button" data-entopen="' + e.id + '">' +
+          (entOffen === e.id ? "Zuklappen" : "Aufmachen") + "</button>" +
+        '<button class="task__del" type="button" data-entdel="' + e.id + '" aria-label="Löschen" title="Löschen">×</button>' +
+      "</div>";
+    }
+
+    var offen = entscheidungen.filter(function (e) { return !e.entschiedenAm; });
+    var fertig = entscheidungen.filter(function (e) { return e.entschiedenAm; });
+    var html = "";
+    if (offen.length) {
+      html += '<div class="group"><div class="group__head">Offen <span class="group__count">' +
+        offen.length + "</span></div>" + offen.map(zeile).join("") + "</div>";
+    }
+    if (fertig.length) {
+      html += '<div class="group"><div class="group__head">Entschieden <span class="group__count">' +
+        fertig.length + "</span></div>" + fertig.map(zeile).join("") + "</div>";
+    }
+    entListeEl.innerHTML = html;
+  }
+
+  function renderEntBogen() {
+    var e = entOffen ? entById(entOffen) : null;
+    if (!e) { entBogenEl.innerHTML = ""; return; }
+
+    function feld(key, platz) {
+      return '<input class="field__input" type="text" data-entfeld="' + key + '" placeholder="' +
+        esc(platz) + '" value="' + esc(e[key] || "") + '" />';
+    }
+    function bereich(key, platz) {
+      return '<textarea data-entfeld="' + key + '" placeholder="' + esc(platz) + '">' +
+        esc(e[key] || "") + "</textarea>";
+    }
+
+    var html = '<div class="sheet">';
+
+    // 1
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">1</span>Worum geht es?</div>' +
+      '<div class="notes"><label class="field"><span class="field__label">Die Frage in einem Satz</span>' +
+      feld("frage", "z. B. Psychologie in Hamburg oder Bremen?") + "</label>" +
+      '<label class="field"><span class="field__label">Erste Tendenz — was sagt dein Bauch, bevor du lange nachdenkst?</span>' +
+      feld("bauch", "z. B. eher Hamburg") + "</label></div></div>";
+
+    // 2
+    var opt = zeilenAus(e.optionen);
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">2</span>Was steht zur Wahl?</div>' +
+      '<ul class="notes__hintlist"><li>Eine Möglichkeit pro Zeile.</li>' +
+      '<li>Nichts tun und alles lassen, wie es ist, zählt auch als Möglichkeit — schreib sie ruhig hin.</li></ul>' +
+      '<div class="notes">' + bereich("optionen", "Hamburg\nBremen\nnoch ein Jahr warten") + "</div></div>";
+
+    // 3
+    var offeneFragen = zeilenAus(e.offen);
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">3</span>Was fehlt dir noch?</div>' +
+      '<ul class="notes__hintlist"><li>Oft steckt man nicht bei der Entscheidung fest, sondern bei einer Information, die schlicht fehlt.</li>' +
+      '<li>Was davon kannst du herausfinden? Das ist kein Grübeln mehr, sondern eine Aufgabe.</li></ul>' +
+      '<div class="notes">' + bereich("offen", "Wie hoch ist die Miete in Hamburg?\nGibt es ein Nachrückverfahren in Bremen?") + "</div>";
+    if (offeneFragen.length) {
+      html += '<div class="ent-fragen">' + offeneFragen.map(function (f, idx) {
+        return '<div class="ent-frage"><span>' + esc(f) + "</span>" +
+          '<button class="btn qbtn" type="button" data-entzutodo="' + idx + '">Als To-do</button></div>';
+      }).join("") + "</div>";
+    }
+    html += "</div>";
+
+    // 4
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">4</span>Wie schlimm wäre ein Fehler?</div>' +
+      '<div class="segmented ent-seg" role="group" aria-label="Wie umkehrbar">' +
+      Object.keys(UMKEHRBAR).map(function (k) {
+        return '<button class="seg" type="button" data-entumkehr="' + k + '" aria-pressed="' +
+          (e.umkehrbar === k ? "true" : "false") + '">' + esc(UMKEHRBAR[k].wort) + "</button>";
+      }).join("") + "</div>";
+    if (e.umkehrbar && UMKEHRBAR[e.umkehrbar]) {
+      html += '<div class="ifcase" style="margin-top:10px"><div class="ifcase__sag">' +
+        esc(UMKEHRBAR[e.umkehrbar].rat) + "</div></div>";
+    }
+    html += "</div>";
+
+    // 5
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">5</span>Bis wann entscheidest du?</div>' +
+      '<ul class="notes__hintlist"><li>Ohne Frist entscheidet irgendwann die Zeit — und meistens schlechter als du.</li></ul>' +
+      '<div class="notes"><div class="notes__row">' +
+      '<label class="field"><span class="field__label">Frist</span>' +
+      feld("frist", "z. B. Freitag oder 12.5.") + "</label>" +
+      '<label class="field"><span class="field__label">Was passiert, wenn du gar nicht entscheidest?</span>' +
+      feld("wennNicht", "z. B. Frist verstreicht, beides weg") + "</label></div>" +
+      '<div class="notes__actions">' +
+        '<button class="copybtn" type="button" id="entZuFrist">Frist merken</button>' +
+        (e.fristKey ? '<span class="notes__msg">Gemerkt: ' + esc(formatDueLang(e.fristKey)) + "</span>" : "") +
+      "</div></div></div>";
+
+    // Feststecken + Ergebnis
+    html += '<div class="sheet__step"><div class="sheet__label"><span class="sheet__num">✓</span>Immer noch unschlüssig?</div>';
+    if (opt.length >= 2) {
+      html += '<ul class="notes__hintlist"><li>Wirf eine Münze — nicht um zu machen, was sie sagt, sondern um zu merken, ' +
+        'was du dir beim Fallen <em>wünschst</em>. Das ist die eigentliche Antwort.</li></ul>' +
+        '<div class="notes__actions"><button class="btn qbtn" type="button" id="entMuenze">Münze werfen</button>' +
+        '<span class="notes__msg" id="entMuenzeErgebnis"></span></div>';
+    } else {
+      html += '<ul class="notes__hintlist"><li>Trag oben mindestens zwei Möglichkeiten ein, dann gibt es hier noch einen Trick.</li></ul>';
+    }
+
+    html += '<div class="notes" style="margin-top:12px">' +
+      '<label class="field"><span class="field__label">Entschieden für</span>' +
+      feld("ergebnis", "z. B. Hamburg") + "</label>" +
+      '<div class="notes__actions">' +
+        (e.entschiedenAm
+          ? '<button class="btn" type="button" id="entWiederOffen">Doch noch offen</button>' +
+            '<span class="notes__msg">Entschieden am ' + esc(new Date(e.entschiedenAm).toLocaleDateString("de-DE")) + "</span>"
+          : '<button class="copybtn" type="button" id="entFesthalten">Entscheidung festhalten</button>') +
+        '<span class="backup__msg" id="entMsg"></span>' +
+      "</div></div></div>";
+
+    html += "</div>";
+    entBogenEl.innerHTML = html;
+  }
+
+  function renderEntAll() { renderEntListe(); renderEntBogen(); }
+
+  document.getElementById("entNeu").addEventListener("click", function () {
+    var e = { id: "e" + Date.now() + Math.random().toString(36).slice(2, 5),
+              frage: "", bauch: "", optionen: "", offen: "", umkehrbar: "",
+              frist: "", fristKey: null, wennNicht: "", ergebnis: "",
+              entschiedenAm: null, createdAt: Date.now() };
+    entscheidungen.unshift(e);
+    entOffen = e.id;
+    saveEnt();
+    renderEntAll();
+    var f = entBogenEl.querySelector('[data-entfeld="frage"]');
+    if (f) f.focus();
+  });
+
+  entListeEl.addEventListener("click", function (ev) {
+    var auf = ev.target.closest("[data-entopen]");
+    if (auf) {
+      entOffen = (entOffen === auf.dataset.entopen) ? null : auf.dataset.entopen;
+      renderEntAll();
+      return;
+    }
+    var weg = ev.target.closest("[data-entdel]");
+    if (weg) {
+      var e = entById(weg.dataset.entdel);
+      if (e && (e.frage || "").trim() && !confirm("Entscheidung „" + e.frage + "“ löschen?")) return;
+      entscheidungen = entscheidungen.filter(function (x) { return x.id !== weg.dataset.entdel; });
+      if (entOffen === weg.dataset.entdel) entOffen = null;
+      saveEnt();
+      renderEntAll();
+    }
+  });
+
+  // Tippen speichert nur — neu gezeichnet wird erst beim Verlassen des Feldes,
+  // sonst springt einem der Schreibfokus weg.
+  entBogenEl.addEventListener("input", function (ev) {
+    var f = ev.target.closest("[data-entfeld]");
+    if (!f) return;
+    var e = entById(entOffen);
+    if (!e) return;
+    e[f.dataset.entfeld] = f.value;
+    saveEnt();
+  });
+
+  entBogenEl.addEventListener("change", function (ev) {
+    var f = ev.target.closest("[data-entfeld]");
+    if (!f) return;
+    if (f.dataset.entfeld === "frage") renderEntListe();
+    if (f.dataset.entfeld === "offen" || f.dataset.entfeld === "optionen") renderEntBogen();
+  });
+
+  entBogenEl.addEventListener("click", function (ev) {
+    var e = entById(entOffen);
+    if (!e) return;
+
+    var um = ev.target.closest("[data-entumkehr]");
+    if (um) {
+      e.umkehrbar = (e.umkehrbar === um.dataset.entumkehr) ? "" : um.dataset.entumkehr;
+      saveEnt(); renderEntBogen(); return;
+    }
+
+    var zt = ev.target.closest("[data-entzutodo]");
+    if (zt) {
+      var frage = zeilenAus(e.offen)[Number(zt.dataset.entzutodo)];
+      if (!frage) return;
+      items.push({
+        id: "t" + Date.now() + Math.random().toString(36).slice(2, 6),
+        text: frage, subject: "Klären", dueKey: null, isFixed: false,
+        repeat: null, amountCents: null, kuend: null,
+        done: false, createdAt: Date.now()
+      });
+      save(items); render();
+      entMeldung("Steht jetzt bei den To-dos.");
+      return;
+    }
+
+    if (ev.target.closest("#entZuFrist")) {
+      var p = parseInput(e.frist || "");
+      if (!p.dueKey) { entMeldung("Kein Datum erkannt — schreib z. B. „Freitag“ oder „12.5.“.", false); return; }
+      e.fristKey = p.dueKey;
+      items.push({
+        id: "t" + Date.now() + Math.random().toString(36).slice(2, 6),
+        text: "Entscheiden: " + (e.frage || "offene Entscheidung"),
+        subject: null, dueKey: p.dueKey, isFixed: true,
+        repeat: null, amountCents: null, kuend: null,
+        done: false, createdAt: Date.now()
+      });
+      save(items); saveEnt(); render(); renderEntAll();
+      return;
+    }
+
+    if (ev.target.closest("#entMuenze")) {
+      var opt = zeilenAus(e.optionen);
+      if (opt.length < 2) return;
+      var gezogen = opt[Math.floor(Math.random() * opt.length)];
+      var el = document.getElementById("entMuenzeErgebnis");
+      if (el) el.textContent = "„" + gezogen + "“ — und? Erleichtert oder enttäuscht?";
+      return;
+    }
+
+    if (ev.target.closest("#entFesthalten")) {
+      if (!(e.ergebnis || "").trim()) { entMeldung("Schreib erst hin, wofür du dich entschieden hast.", false); return; }
+      e.entschiedenAm = Date.now();
+      saveEnt(); renderEntAll();
+      return;
+    }
+
+    if (ev.target.closest("#entWiederOffen")) {
+      e.entschiedenAm = null;
+      saveEnt(); renderEntAll();
+      return;
+    }
+  });
+
+  renderEntAll();
+
+
   /* ======================= Sichern & Uebertragen ======================= */
 
   var expTextEl = document.getElementById("expText");
@@ -4013,6 +4470,7 @@
       items: items,
       notes: notes,
       vorlagen: eigene,
+      entscheidungen: entscheidungen,
       settings: settings,
     };
   }
@@ -4032,7 +4490,7 @@
     if (backupEl.open) { expFuellen(); meldung(expMsgEl, ""); }
   });
 
-  function mengenText(eintraege, notizen, vorlagen) {
+  function mengenText(eintraege, notizen, vorlagen, entsch) {
     var fristen = 0, todos = 0, abos = 0;
     eintraege.forEach(function (i) {
       if (isAbo(i)) abos++;
@@ -4045,6 +4503,7 @@
     if (abos) teile.push(abos + (abos === 1 ? " Abo" : " Abos"));
     if (notizen.length) teile.push(notizen.length + (notizen.length === 1 ? " Notiz" : " Notizen"));
     if (vorlagen && vorlagen.length) teile.push(vorlagen.length + (vorlagen.length === 1 ? " Vorlage" : " Vorlagen"));
+    if (entsch && entsch.length) teile.push(entsch.length + (entsch.length === 1 ? " Entscheidung" : " Entscheidungen"));
     if (!teile.length) return "nichts";
     if (teile.length === 1) return teile[0];
     return teile.slice(0, -1).join(", ") + " und " + teile[teile.length - 1];
@@ -4177,6 +4636,27 @@
               typeof x.title === "string" && x.title.trim());
   }
 
+  function gueltigeEntscheidung(x) {
+    return !!(x && typeof x === "object" && typeof x.frage === "string");
+  }
+
+  var UMKEHR_WERTE = { leicht: 1, aufwand: 1, endgueltig: 1 };
+
+  function saeubernEntscheidung(x) {
+    function txt(v) { return typeof v === "string" ? v : ""; }
+    return {
+      id: (typeof x.id === "string" && x.id) ? x.id : neueId("e"),
+      frage: txt(x.frage), bauch: txt(x.bauch),
+      optionen: txt(x.optionen), offen: txt(x.offen),
+      umkehrbar: UMKEHR_WERTE[x.umkehrbar] ? x.umkehrbar : "",
+      frist: txt(x.frist),
+      fristKey: (typeof x.fristKey === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x.fristKey)) ? x.fristKey : null,
+      wennNicht: txt(x.wennNicht), ergebnis: txt(x.ergebnis),
+      entschiedenAm: (typeof x.entschiedenAm === "number" && isFinite(x.entschiedenAm)) ? x.entschiedenAm : null,
+      createdAt: (typeof x.createdAt === "number" && isFinite(x.createdAt)) ? x.createdAt : Date.now(),
+    };
+  }
+
   function saeubernVorlage(x) {
     return {
       id: (typeof x.id === "string" && x.id) ? x.id : neueId("v"),
@@ -4255,17 +4735,18 @@
     var eintraege = (Array.isArray(p.items) ? p.items : []).filter(gueltigerEintrag).map(saeubernEintrag);
     var notizen = (Array.isArray(p.notes) ? p.notes : []).filter(gueltigeNotiz).map(saeubernNotiz);
     var vorlagen = (Array.isArray(p.vorlagen) ? p.vorlagen : []).filter(gueltigeVorlage).map(saeubernVorlage);
+    var entsch = (Array.isArray(p.entscheidungen) ? p.entscheidungen : []).filter(gueltigeEntscheidung).map(saeubernEntscheidung);
     var einst = (p.settings && typeof p.settings === "object" && !Array.isArray(p.settings)) ? p.settings : {};
 
-    if (!eintraege.length && !notizen.length && !vorlagen.length) {
+    if (!eintraege.length && !notizen.length && !vorlagen.length && !entsch.length) {
       meldung(impMsgEl, "Die Sicherung ist leer.", false);
       return;
     }
 
-    wartendesPaket = { items: eintraege, notes: notizen, vorlagen: vorlagen, settings: einst };
+    wartendesPaket = { items: eintraege, notes: notizen, vorlagen: vorlagen, entscheidungen: entsch, settings: einst };
     impMergeBtn.disabled = false;
     impReplaceBtn.disabled = false;
-    meldung(impMsgEl, "Gefunden: " + mengenText(eintraege, notizen, vorlagen) + ".", true);
+    meldung(impMsgEl, "Gefunden: " + mengenText(eintraege, notizen, vorlagen, entsch) + ".", true);
   }
 
   impTextEl.addEventListener("input", function () { paketPruefen(impTextEl.value); });
@@ -4298,6 +4779,7 @@
     renderNotes();
     renderMsgAll();
     renderCallAll();
+    renderEntAll();
     refreshPreview();
   }
 
@@ -4324,11 +4806,16 @@
 
     var neueEintraege = p.items.filter(function (i) { return !vorhandeneIds[i.id]; });
     var neueNotizen = p.notes.filter(function (n) { return !notizIds[n.id]; });
+    var entIds = {};
+    entscheidungen.forEach(function (e) { entIds[e.id] = true; });
+
     var neueVorlagen = (p.vorlagen || []).filter(function (v) { return !vorlagenIds[v.id]; });
+    var neueEntsch = (p.entscheidungen || []).filter(function (e) { return !entIds[e.id]; });
 
     neueEintraege.forEach(function (i) { items.push(i); });
     neueNotizen.forEach(function (n) { notes.push(n); });
     neueVorlagen.forEach(function (v) { eigene.push(v); });
+    neueEntsch.forEach(function (e) { entscheidungen.push(e); });
     notes.sort(function (a, b) { return b.createdAt - a.createdAt; });
 
     if (!settings.ich && p.settings.ich) settings.ich = p.settings.ich;
@@ -4336,17 +4823,18 @@
     save(items);
     saveNotes();
     saveVorlagen();
+    saveEnt();
     saveSettings(settings);
     allesNeuZeichnen();
 
-    var dazu = neueEintraege.length + neueNotizen.length + neueVorlagen.length;
+    var dazu = neueEintraege.length + neueNotizen.length + neueVorlagen.length + neueEntsch.length;
     if (!dazu) fertig("War schon alles da \u2014 nichts doppelt angelegt.");
-    else fertig("Dazugekommen: " + mengenText(neueEintraege, neueNotizen, neueVorlagen) + ".");
+    else fertig("Dazugekommen: " + mengenText(neueEintraege, neueNotizen, neueVorlagen, neueEntsch) + ".");
   });
 
   impReplaceBtn.addEventListener("click", function () {
     if (!wartendesPaket) return;
-    var vorher = mengenText(items, notes, eigene);
+    var vorher = mengenText(items, notes, eigene, entscheidungen);
     if (!confirm("Alles ersetzen?\n\nWas jetzt drin ist (" + vorher + "), wird gel\u00f6scht und durch die Sicherung ersetzt.")) return;
 
     var p = wartendesPaket;
@@ -4357,15 +4845,19 @@
     notes.sort(function (a, b) { return b.createdAt - a.createdAt; });
     eigene.length = 0;
     (p.vorlagen || []).forEach(function (v) { eigene.push(v); });
+    entscheidungen.length = 0;
+    (p.entscheidungen || []).forEach(function (e) { entscheidungen.push(e); });
+    entOffen = null;
 
     if (p.settings.ich) settings.ich = p.settings.ich;
 
     save(items);
     saveNotes();
     saveVorlagen();
+    saveEnt();
     saveSettings(settings);
     allesNeuZeichnen();
-    fertig("Ersetzt \u2014 jetzt drin: " + mengenText(items, notes, eigene) + ".");
+    fertig("Ersetzt \u2014 jetzt drin: " + mengenText(items, notes, eigene, entscheidungen) + ".");
   });
 
   expFuellen();
