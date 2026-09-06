@@ -1840,6 +1840,44 @@
                end: m.index + m[0].length, ersatz: "" };
     }
 
+    // Wie man es wirklich schreibt: "pro Monat", "im Jahr", "€/Monat", "mtl.".
+    // Ohne diese Formen wird aus einem Abo ein To-do, weil ohne Rhythmus kein
+    // Abo erkannt wird -- und ohne Rhythmus gibt es auch kein Datum.
+
+    // Halb- und vierteljaehrlich zuerst: sonst greift weiter unten "jaehrlich".
+    m = lower.match(wordRe("(halbjährlich|halbjaehrlich|halbjährig|halbjaehrig)"));
+    if (m) return { rep: { unit: "month", n: 6 }, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
+
+    m = lower.match(wordRe("(vierteljährlich|vierteljaehrlich|quartalsweise)"));
+    if (m) return { rep: { unit: "month", n: 3 }, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
+
+    // "pro Monat", "je Woche", "im Jahr", "einmal im Jahr", "in der Woche".
+    // Die Zahlensperre haelt "im Jahr 2027" heraus -- das ist ein Datum.
+    m = lower.match(wordRe("(?:einmal\\s+)?(?:pro|je|im|in\\s+der|in\\s+dem)\\s+(tag|woche|monat|quartal|jahr)(?!\\s*\\d)"));
+    if (m) {
+      var pe = m[2];
+      var prep = pe === "quartal" ? { unit: "month", n: 3 } : { unit: einheitAus(pe), n: 1 };
+      return { rep: prep, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
+    }
+
+    // "12,99 €/Monat" -- der Betrag ist da schon herausgeloest, uebrig bleibt "/Monat".
+    m = lower.match(new RegExp(PRE + "\\/\\s*(tag|woche|monat|quartal|jahr)" + POST));
+    if (m) {
+      var se = m[2];
+      var srep = se === "quartal" ? { unit: "month", n: 3 } : { unit: einheitAus(se), n: 1 };
+      return { rep: srep, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
+    }
+
+    // Abkuerzungen. Der Punkt gehoert mit weggeschnitten, sonst bleibt er stehen.
+    m = lower.match(wordRe("(mtl|monatl|wöchentl|woechentl|jährl|jaehrl|tägl|taegl|wtl|tgl)\\.?"));
+    if (m) {
+      var ae = m[2];
+      var aunit = ae.indexOf("tag") === 0 || ae === "tgl" ? "day"
+        : ae.indexOf("wöch") === 0 || ae.indexOf("woech") === 0 || ae === "wtl" ? "week"
+        : ae === "mtl" || ae.indexOf("monat") === 0 ? "month" : "year";
+      return { rep: { unit: aunit, n: 1 }, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
+    }
+
     m = lower.match(wordRe("(täglich|taeglich|jeden\\s+tag)"));
     if (m) return { rep: { unit: "day", n: 1 }, start: m.index + (m[1] || "").length, end: m.index + m[0].length, ersatz: "" };
 
