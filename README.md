@@ -43,6 +43,14 @@ ohne Server-Abhängigkeit.
 Die App ist für Smartphones/Tablets optimiert (große Tipp-Flächen),
 funktioniert aber ebenso am Desktop.
 
+## Bonus: Elfmeterschießen
+
+Über den Button „⚽ Elfmeterschießen spielen" in der Kopfzeile gelangt man
+zu `fussball.html`, einem kleinen Fußball-Minispiel: Mit Maus oder Finger
+im Tor zielen (ziehen) und mit „Schießen" auslösen. Der Torwart wird von
+Schuss zu Schuss etwas stärker; nach 5 Elfmetern gibt es das Ergebnis und
+einen in `localStorage` gespeicherten Rekord.
+
 ## Auf dem Handy als App ablegen
 
 Die Seite bringt ein Web-App-Manifest und Homescreen-Icons mit, lässt
@@ -67,6 +75,7 @@ bleibt, wenn das Betriebssystem es rund oder abgerundet zuschneidet.
 | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Aus `icon.svg` gerenderte Homescreen-Icons |
 | `manifest.webmanifest` | Web-App-Manifest (Name, Farben, Icons)    |
 | `_headers`    | Netlify: korrekter MIME-Typ für das Manifest       |
+| `fussball.html`, `fussball.css`, `fussball.js` | Bonus-Minispiel: Elfmeterschießen |
 
 ## Hosting
 

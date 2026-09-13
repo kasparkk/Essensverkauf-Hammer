@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Elfmeterschießen – Fußball Spiel</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="theme-color" content="#1e7a3d" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Elfmeterschießen" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="fussball.css" />
+</head>
+<body class="fussball-page">
+  <header class="app-header">
+    <div class="brand">
+      <span class="ball-emoji" aria-hidden="true">⚽</span>
+      <div class="brand-text">
+        <h1>Elfmeterschießen</h1>
+        <p class="subtitle">Ziel setzen, schießen, den Torwart überlisten</p>
+      </div>
+    </div>
+    <nav class="game-nav">
+      <a href="index.html">&larr; Zur Strichliste</a>
+    </nav>
+  </header>
+
+  <main class="game-main">
+    <section class="scoreboard" aria-label="Spielstand">
+      <div class="score-box">
+        <span class="score-label">Schuss</span>
+        <span id="shot-number" class="score-value">1 / 5</span>
+      </div>
+      <div class="score-box">
+        <span class="score-label">Tore</span>
+        <span id="goal-count" class="score-value">0</span>
+      </div>
+      <div class="score-box">
+        <span class="score-label">Rekord</span>
+        <span id="highscore" class="score-value">0 / 5</span>
+      </div>
+    </section>
+
+    <div class="canvas-wrap">
+      <canvas id="game-canvas" width="400" height="600" aria-label="Spielfeld: Elfmeterschießen"></canvas>
+      <div id="message-banner" class="message-banner" hidden></div>
+      <div id="end-overlay" class="end-overlay" hidden>
+        <div class="end-card">
+          <h2 id="end-title">Ergebnis</h2>
+          <p id="end-text"></p>
+          <button id="play-again-btn" type="button">Nochmal spielen</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint">
+      Mit Maus/Finger im Tor zielen (ziehen), dann <strong>Schießen</strong> tippen.
+      Pfeiltasten bewegen das Fadenkreuz, Leertaste schießt.
+    </p>
+
+    <section class="controls" aria-label="Spielsteuerung">
+      <button id="shoot-btn" type="button" class="shoot-btn">Schießen ⚽</button>
+    </section>
+  </main>
+
+  <script src="fussball.js"></script>
+</body>
+</html>

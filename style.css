@@ -26,6 +26,26 @@ body {
   text-align: center;
 }
 
+.game-nav {
+  margin-top: 0.9rem;
+}
+
+.game-nav a {
+  display: inline-block;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+}
+
+.game-nav a:active {
+  background: var(--color-bg);
+}
+
 .brand {
   display: flex;
   align-items: center;
