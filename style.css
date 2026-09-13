@@ -28,6 +28,10 @@ body {
 
 .game-nav {
   margin-top: 0.9rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .game-nav a {

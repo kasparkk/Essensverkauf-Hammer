@@ -43,13 +43,21 @@ ohne Server-Abhängigkeit.
 Die App ist für Smartphones/Tablets optimiert (große Tipp-Flächen),
 funktioniert aber ebenso am Desktop.
 
-## Bonus: Elfmeterschießen
+## Bonus: Fußballspiele
 
-Über den Button „⚽ Elfmeterschießen spielen" in der Kopfzeile gelangt man
-zu `fussball.html`, einem kleinen Fußball-Minispiel: Mit Maus oder Finger
-im Tor zielen (ziehen) und mit „Schießen" auslösen. Der Torwart wird von
-Schuss zu Schuss etwas stärker; nach 5 Elfmetern gibt es das Ergebnis und
-einen in `localStorage` gespeicherten Rekord.
+Über die Buttons in der Kopfzeile gelangt man zu zwei kleinen
+Fußball-Minispielen:
+
+- **Match** (`match.html`): ein spielbares 5-gegen-5-Match gegen den
+  Computer, angelehnt an Arcade-Fußballspiele wie Dream League Soccer.
+  Steuerung per Pfeiltasten/WASD (Bewegen), Leertaste (Schuss), X (Pass) –
+  am Handy per Ziehen im Feld und den Buttons „Schießen"/„Pass". Die
+  Steuerung springt automatisch zum ballnächsten eigenen Spieler. Nach 90
+  Sekunden Spielzeit gibt es den Endstand.
+- **Elfmeterschießen** (`fussball.html`): Mit Maus oder Finger im Tor
+  zielen (ziehen) und mit „Schießen" auslösen. Der Torwart wird von
+  Schuss zu Schuss etwas stärker; nach 5 Elfmetern gibt es das Ergebnis
+  und einen in `localStorage` gespeicherten Rekord.
 
 ## Auf dem Handy als App ablegen
 
@@ -76,6 +84,7 @@ bleibt, wenn das Betriebssystem es rund oder abgerundet zuschneidet.
 | `manifest.webmanifest` | Web-App-Manifest (Name, Farben, Icons)    |
 | `_headers`    | Netlify: korrekter MIME-Typ für das Manifest       |
 | `fussball.html`, `fussball.css`, `fussball.js` | Bonus-Minispiel: Elfmeterschießen |
+| `match.html`, `match.css`, `match.js` | Bonus-Minispiel: spielbares Match gegen den Computer |
 
 ## Hosting
 
