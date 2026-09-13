@@ -1314,6 +1314,15 @@
 
   .empty__hint { font-size: 0.87rem; line-height: 1.5; }
 
+  /* Damit man auf einen Blick sieht, ob die App aktuell ist: auf dem Handy
+     kann eine alte Fassung im Speicher haengenbleiben. */
+  .foot__fassung {
+    display: inline-block;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+  }
+
   .foot {
     font-size: 0.74rem;
     color: var(--ink-faint);
@@ -1581,12 +1590,17 @@
   <p class="foot">
     Alles bleibt in diesem Browser gespeichert — nichts wird hochgeladen.
     Lege dir den Link auf den Startbildschirm, dann ist alles immer griffbereit.
+    <br><span class="foot__fassung" id="fassung"></span>
   </p>
 </div>
 
 <script>
 (function () {
   "use strict";
+
+  // Wird bei jeder Veroeffentlichung hochgezaehlt. Steht unten in der
+  // Fusszeile, damit man eine haengengebliebene alte Fassung sofort erkennt.
+  var FASSUNG = "13.9.2026";
 
   var STORAGE_KEY = "faellig-aufgaben-v1";
   var SETTINGS_KEY = "faellig-einstellungen-v1";
@@ -5184,6 +5198,9 @@
 
     if (!icsMsgEl.textContent) meldung(icsMsgEl, anzahl + " unterwegs …");
   });
+
+  var fassungEl = document.getElementById("fassung");
+  if (fassungEl) fassungEl.textContent = "Fassung " + FASSUNG;
 
   refreshPreview();
   render();
