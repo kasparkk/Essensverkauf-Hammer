@@ -980,7 +980,7 @@
 
   .ent-fragen { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 
-  .ent-frage {
+  .ent-frage, .kalzeile {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -990,8 +990,12 @@
     font-size: 0.92rem;
   }
 
-  .ent-frage > span { flex: 1 1 auto; overflow-wrap: anywhere; }
-  .ent-frage > button { flex: none; white-space: nowrap; }
+  .ent-frage > span, .kalzeile > span { flex: 1 1 auto; overflow-wrap: anywhere; }
+  .ent-frage > button, .kalzeile > a { flex: none; white-space: nowrap; text-decoration: none; }
+
+  .kalzeile { margin-bottom: 6px; }
+  .kalzeile:last-child { margin-bottom: 0; }
+  .kalzeile__tag { color: var(--ink-faint); }
 
   .ent-seg { flex-wrap: wrap; }
 
@@ -1559,6 +1563,7 @@
     <summary>Fristen in den Kalender</summary>
     <div class="backup__body">
       <div class="backup__block">
+        <span class="backup__title">Alles auf einmal &mdash; als Datei</span>
         <span class="backup__hint">
           Macht aus deinen Fristen eine Kalender-Datei. Die importierst du einmal in
           Google Kalender, Apple Kalender oder Outlook &mdash; ab da erinnert dich der Kalender,
@@ -1583,6 +1588,16 @@
           <span class="backup__msg" id="icsMsg"></span>
         </div>
         <textarea id="icsText" readonly hidden aria-label="Kalender-Daten zum Kopieren"></textarea>
+      </div>
+
+      <div class="backup__block">
+        <span class="backup__title">Einzeln &mdash; direkt in Google Kalender</span>
+        <span class="backup__hint">
+          &Ouml;ffnet Google Kalender mit fertig ausgef&uuml;lltem Termin &mdash; du tippst nur noch
+          auf Speichern. Keine Datei, kein Import, kein Google-Zugang n&ouml;tig. Daf&uuml;r
+          einer nach dem anderen. Das H&auml;kchen oben gilt hier mit.
+        </span>
+        <div id="googleListe"></div>
       </div>
     </div>
   </details>
@@ -2599,6 +2614,9 @@
           '<button class="done-item__undo" data-act="undo" data-id="' + i.id + '">zurück</button>' +
           "</div>";
       }).join("");
+
+    // Die Google-Liste haengt an denselben Daten und muss mitwandern.
+    renderGoogleListe();
   }
 
   /* ======================= Eingabe-Steuerung ======================= */
@@ -5065,6 +5083,50 @@
     return { keys: [item.dueKey], rrule: "FREQ=" + freq + (n > 1 ? ";INTERVAL=" + n : "") };
   }
 
+  // Google Kalender laesst sich ueber die Adresszeile mit einem fertigen
+  // Termin oeffnen. Kein Zugang, kein Server, keine Datei -- man tippt nur
+  // noch auf Speichern. Ganztaegig heisst: das Ende ist der Folgetag.
+  function googleLink(titel, key) {
+    var ende = icsTag(toKey(addDays(fromKey(key), 1)));
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+      "&text=" + encodeURIComponent(titel) +
+      "&dates=" + icsTag(key) + "/" + ende +
+      "&details=" + encodeURIComponent("Aus Fällig übernommen.");
+  }
+
+  // Dieselbe Auswahl wie die Kalender-Datei, nur je Eintrag der naechste
+  // Termin statt aller Wiederholungen.
+  function googleEintraege() {
+    var mitAbos = !!(icsAbosEl && icsAbosEl.checked);
+    var liste = kalenderEintraege(mitAbos).map(function (i) {
+      return { key: i.dueKey, titel: kalenderTitel(i) };
+    });
+    kuendKalender().forEach(function (i) {
+      var kf = kuendFrist(i);
+      if (!kf) return;
+      liste.push({ key: kf.bisKey,
+                   titel: ((i.subject ? i.subject + ": " : "") + (i.text || "Vertrag")) + " kündigen" });
+    });
+    liste.sort(function (a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : 0; });
+    return liste.slice(0, 25);
+  }
+
+  function renderGoogleListe() {
+    var el = document.getElementById("googleListe");
+    if (!el) return;
+    var liste = googleEintraege();
+    if (!liste.length) {
+      el.innerHTML = '<span class="backup__hint">Nichts mit Datum da.</span>';
+      return;
+    }
+    el.innerHTML = liste.map(function (e) {
+      return '<div class="kalzeile"><span><span class="kalzeile__tag">' +
+        esc(formatDueLang(e.key)) + "</span> · " + esc(e.titel) + "</span>" +
+        '<a class="btn qbtn" target="_blank" rel="noopener" href="' +
+        esc(googleLink(e.titel, e.key)) + '">Eintragen</a></div>';
+    }).join("");
+  }
+
   function kalenderTitel(item) {
     var t = (item.subject ? item.subject + ": " : "") + (item.text || "");
     if (item.amountCents) t += " (" + formatCents(item.amountCents) + ")";
@@ -5159,6 +5221,12 @@
   icsAbosEl.addEventListener("change", function () {
     settings.icsAbos = icsAbosEl.checked;
     saveSettings(settings);
+    renderGoogleListe();
+  });
+
+  // Beim Aufklappen den aktuellen Stand zeigen.
+  document.getElementById("kalender").addEventListener("toggle", function () {
+    if (this.open) renderGoogleListe();
   });
 
   icsAlarmEl.addEventListener("change", function () {
@@ -5204,6 +5272,7 @@
 
   refreshPreview();
   render();
+  renderGoogleListe();
 })();
 </script>
 
