@@ -1797,14 +1797,32 @@
   // Betraege wie "12,99 €", "9 Euro", "€ 7,50". Ein Waehrungszeichen ist Pflicht,
   // sonst wuerde "15.11." als Geldbetrag durchgehen.
   function findAmount(text) {
+    var roh, start, end;
+
     var m = text.match(/(\d{1,6}(?:[.,]\d{1,2})?)\s*(?:€|eur\b|euro\b)/i);
     if (!m) m = text.match(/(?:€|eur\b|euro\b)\s*(\d{1,6}(?:[.,]\d{1,2})?)/i);
-    if (!m) return null;
-    var roh = m[1].replace(".", ",");
+
+    if (m) {
+      roh = m[1];
+      start = m.index;
+      end = m.index + m[0].length;
+    } else {
+      // Ohne Waehrungszeichen nur die Komma-Form mit genau zwei Stellen:
+      // "12,99". Ein deutsches Datum hat nie ein Komma, und "alle 2 Wochen"
+      // auch nicht -- eine blosse Zahl bleibt darum weiterhin kein Betrag.
+      var k = text.match(/(^|[^\d,.])(\d{1,6},\d{2})(?![\d,.])/);
+      if (!k) return null;
+      roh = k[2];
+      // Das Zeichen davor gehoert zum Treffer, aber nicht zum Betrag.
+      start = k.index + k[1].length;
+      end = start + k[2].length;
+    }
+
+    roh = roh.replace(".", ",");
     var teile = roh.split(",");
     var euro = parseInt(teile[0], 10) || 0;
     var cent = teile[1] ? parseInt((teile[1] + "0").slice(0, 2), 10) : 0;
-    return { cents: euro * 100 + cent, start: m.index, end: m.index + m[0].length };
+    return { cents: euro * 100 + cent, start: start, end: end };
   }
 
   function formatCents(c) {
@@ -2424,19 +2442,36 @@
       "</div>";
   }
 
-  // Ein Abo ist etwas Wiederkehrendes, das Geld kostet. "Muell jeden Dienstag"
-  // wiederholt sich zwar, gehoert aber zu den Fristen. Ein Vertrag mit
-  // Laufzeit zaehlt ebenfalls dazu, auch ohne Preis — er laeuft ja weiter.
-  function isAbo(i) { return !!(i.repeat && i.amountCents) || !!(i.kuend && i.kuend.endeKey); }
+  // Woran man ein Abo erkennt, wenn niemand es gesagt hat: wiederkehrend und
+  // kostet Geld. "Muell jeden Dienstag" wiederholt sich zwar, gehoert aber zu
+  // den Fristen. Ein Vertrag mit Laufzeit zaehlt auch ohne Preis dazu — er
+  // laeuft ja weiter.
+  function aboMerkmale(i) {
+    return !!(i.repeat && i.amountCents) || !!(i.kuend && i.kuend.endeKey);
+  }
+
+  // Was man im Abo- oder To-do-Reiter eintraegt, bleibt dort. Der Reiter ist
+  // eine klare Ansage und wiegt schwerer als das, was im Satz steht. Nur was
+  // von den Fristen aus kam — dem Startreiter, wo man einfach lostippt — wird
+  // weiter selbst einsortiert.
+  //
+  // "fristen" wird bewusst nicht festgehalten: nimmt man beim Bearbeiten das
+  // Datum heraus, waere die Frist sonst in keiner Liste mehr zu sehen.
+  function bereichVon(i) {
+    if (i.bereich === "abos") return "abos";
+    if (i.bereich === "todos") return "todos";
+    if (aboMerkmale(i)) return "abos";
+    return i.dueKey ? "fristen" : "todos";
+  }
+
+  function isAbo(i) { return bereichVon(i) === "abos"; }
 
   function render() {
     var open = items.filter(function (i) { return !i.done; });
     var done = items.filter(function (i) { return i.done; });
-    var offeneAbos = open.filter(isAbo);
-    var rest = open.filter(function (i) { return !isAbo(i); });
-    // Mit Datum = Frist, ohne Datum = To-do.
-    var todos = rest.filter(function (i) { return !i.dueKey; });
-    open = rest.filter(function (i) { return !!i.dueKey; });
+    var offeneAbos = open.filter(function (i) { return bereichVon(i) === "abos"; });
+    var todos = open.filter(function (i) { return bereichVon(i) === "todos"; });
+    open = open.filter(function (i) { return bereichVon(i) === "fristen"; });
 
     // Fristenliste besteht aus echten Eintraegen und den abgeleiteten
     // Kuendigungsterminen der Abos.
@@ -2564,6 +2599,8 @@
 
   // Abo (wiederkehrend + Betrag), sonst Frist (mit Datum) oder To-do (ohne).
   function zielBereich(p) {
+    // Der offene Reiter gewinnt: was man unter Abos eintippt, ist ein Abo.
+    if (aktiverTab === "abos" || aktiverTab === "todos") return aktiverTab;
     if (p.repeat && p.amountCents) return "abos";
     if (p.kuend && p.kuend.endeKey) return "abos";
     return p.dueKey ? "fristen" : "todos";
@@ -2580,6 +2617,14 @@
       if (repeatOverride === "month" || repeatOverride === "year") {
         p.repeat.tag = fromKey(p.dueKey).getDate();
       }
+    }
+    // Im Abo-Reiter ist alles wiederkehrend. Steht kein Rhythmus im Satz, ist
+    // monatlich die vernuenftige Annahme — ohne Rhythmus zaehlte der Betrag
+    // sonst nicht in der Monatssumme mit.
+    if (aktiverTab === "abos" && !p.repeat) {
+      p.repeat = { unit: "month", n: 1 };
+      if (!p.dueKey) p.dueKey = toKey(today());
+      p.repeat.tag = fromKey(p.dueKey).getDate();
     }
     return p;
   }
@@ -2689,6 +2734,7 @@
     if (!value) return;
 
     var p = currentParse();
+    var ziel = zielBereich(p);
     items.push({
       id: "t" + Date.now() + Math.random().toString(36).slice(2, 6),
       text: p.text || value,
@@ -2698,11 +2744,12 @@
       repeat: p.repeat || null,
       amountCents: p.amountCents || null,
       kuend: p.kuend || null,
+      // Nur die ausdrueckliche Wahl festhalten — siehe bereichVon().
+      bereich: (ziel === "abos" || ziel === "todos") ? ziel : null,
       done: false,
       createdAt: Date.now(),
     });
     save(items);
-    var ziel = zielBereich(p);
     addInput.value = "";
     clearQuick();
     render();
@@ -4737,6 +4784,7 @@
       repeat: (x.repeat && typeof x.repeat === "object") ? x.repeat : null,
       amountCents: (typeof x.amountCents === "number" && isFinite(x.amountCents)) ? x.amountCents : null,
       kuend: saeubernKuend(x.kuend),
+      bereich: (x.bereich === "abos" || x.bereich === "todos") ? x.bereich : null,
       done: !!x.done,
       createdAt: (typeof x.createdAt === "number" && isFinite(x.createdAt)) ? x.createdAt : Date.now(),
     };
