@@ -1,220 +1,289 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "essensverkauf.items.v1";
+  const STORAGE_KEY = "gebaerden-assistent.history.v1";
+  const MAX_HISTORY = 50;
 
-  const itemListEl = document.getElementById("item-list");
-  const itemTemplate = document.getElementById("item-template");
-  const addItemForm = document.getElementById("add-item-form");
-  const nameInput = document.getElementById("item-name");
-  const priceInput = document.getElementById("item-price");
-  const resetBtn = document.getElementById("reset-btn");
-  const totalCountEl = document.getElementById("total-count");
-  const totalRevenueEl = document.getElementById("total-revenue");
+  const micBtn = document.getElementById("mic-btn");
+  const micLabel = document.getElementById("mic-label");
+  const micStatus = document.getElementById("mic-status");
+  const textForm = document.getElementById("text-form");
+  const textInput = document.getElementById("text-input");
+  const interimCaptionEl = document.getElementById("interim-caption");
+  const finalCaptionEl = document.getElementById("final-caption");
+  const fingerspellingToggle = document.getElementById("fingerspelling-toggle");
+  const fingerspellingStrip = document.getElementById("fingerspelling-strip");
+  const playBtn = document.getElementById("play-btn");
+  const speedRange = document.getElementById("speed-range");
+  const fontsizeRange = document.getElementById("fontsize-range");
+  const historyList = document.getElementById("history-list");
+  const historyItemTemplate = document.getElementById("history-item-template");
+  const clearHistoryBtn = document.getElementById("clear-history-btn");
 
-  /** @type {{id: string, name: string, price: number, count: number}[]} */
-  let items = loadItems();
+  const SpeechRecognitionCtor =
+    window.SpeechRecognition || window.webkitSpeechRecognition || null;
 
-  function loadItems() {
+  let recognition = null;
+  let listening = false;
+  let playbackTimer = null;
+  let playbackTokens = [];
+  let playbackIndex = 0;
+
+  function loadHistory() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return defaultItems();
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed) || parsed.length === 0) return defaultItems();
-      return parsed;
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
-      return defaultItems();
+      return [];
     }
   }
 
-  function defaultItems() {
-    return [
-      { id: cryptoId(), name: "Bratwurst", price: 2.5, count: 0 },
-      { id: cryptoId(), name: "Kuchen", price: 1.5, count: 0 },
-      { id: cryptoId(), name: "Getränk", price: 1.0, count: 0 },
-    ];
+  function saveHistory(history) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
   }
 
-  function cryptoId() {
-    return Math.random().toString(36).slice(2, 10);
-  }
+  let history = loadHistory();
 
-  function saveItems() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }
-
-  function formatNumber(value) {
-    return value.toLocaleString("de-DE", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+  function formatTime(ts) {
+    return new Date(ts).toLocaleTimeString("de-DE", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   }
 
-  function formatEuro(value) {
-    return formatNumber(value) + " €";
-  }
-
-  /**
-   * Liest einen Preis so, wie er hierzulande eingetippt wird: "2,50" ebenso
-   * wie "2.50". Gibt null zurück, wenn die Eingabe kein gültiger Preis ist.
-   */
-  function parsePrice(text) {
-    const normalized = String(text).replace(/\s/g, "").replace(",", ".");
-    if (!normalized) return null;
-    const value = Number(normalized);
-    if (!Number.isFinite(value) || value < 0) return null;
-    return Math.round(value * 100) / 100;
-  }
-
-  function fillRow(node, item) {
-    node.dataset.id = item.id;
-    node.querySelector(".item-name").textContent = item.name;
-    node.querySelector(".item-price").textContent = formatEuro(item.price) + " / Stück";
-    node.querySelector(".tally-count").textContent = String(item.count);
-    const subtotal = item.price * item.count;
-    node.querySelector(".item-subtotal").textContent =
-      item.count > 0 ? `${item.count} × = ${formatEuro(subtotal)}` : "";
-  }
-
-  function updateTotals() {
-    let totalCount = 0;
-    let totalRevenue = 0;
-    for (const item of items) {
-      totalCount += item.count;
-      totalRevenue += item.price * item.count;
+  function renderHistory() {
+    historyList.innerHTML = "";
+    for (const entry of history) {
+      const node = historyItemTemplate.content.firstElementChild.cloneNode(true);
+      node.querySelector(".history-time").textContent = formatTime(entry.ts);
+      node.querySelector(".history-text").textContent = entry.text;
+      node.querySelector(".history-replay").addEventListener("click", () => {
+        showFinalText(entry.text, false);
+      });
+      historyList.appendChild(node);
     }
-    totalCountEl.textContent = String(totalCount);
-    totalRevenueEl.textContent = formatEuro(totalRevenue);
   }
 
-  /**
-   * Ersetzt Bezeichnung oder Preis an Ort und Stelle durch ein Eingabefeld.
-   * Der Zählerstand bleibt dabei unberührt.
-   */
-  function beginEdit(node, item, field) {
-    const isPrice = field === "price";
-    const target = node.querySelector(isPrice ? ".item-price" : ".item-name");
-    if (target.hidden) return;
+  function addToHistory(text) {
+    if (!text.trim()) return;
+    history.unshift({ text: text.trim(), ts: Date.now() });
+    history = history.slice(0, MAX_HISTORY);
+    saveHistory(history);
+    renderHistory();
+  }
 
-    const input = document.createElement("input");
-    input.type = "text";
-    input.className = "field-editor" + (isPrice ? " field-editor--price" : "");
-    if (isPrice) {
-      input.value = formatNumber(item.price);
-      input.inputMode = "decimal";
-      input.setAttribute("aria-label", "Preis in Euro bearbeiten");
-    } else {
-      input.value = item.name;
-      input.maxLength = 40;
-      input.setAttribute("aria-label", "Bezeichnung bearbeiten");
-    }
+  clearHistoryBtn.addEventListener("click", () => {
+    if (!confirm("Verlauf wirklich löschen?")) return;
+    history = [];
+    saveHistory(history);
+    renderHistory();
+  });
 
-    target.hidden = true;
-    target.insertAdjacentElement("afterend", input);
-    input.focus();
-    input.select();
+  // ---- Fingeralphabet-Wiedergabe ------------------------------------
 
-    let closed = false;
-    const finish = (save) => {
-      if (closed) return;
-      closed = true;
-      if (save) {
-        if (isPrice) {
-          const price = parsePrice(input.value);
-          if (price !== null) item.price = price;
-        } else {
-          const name = input.value.trim();
-          if (name) item.name = name;
+  function tokenize(text) {
+    // Zerlegt in Wörter, Leerzeichen bleiben als eigenes Token für Pausen.
+    const tokens = [];
+    const words = text.split(/(\s+)/);
+    for (const w of words) {
+      if (!w) continue;
+      if (/^\s+$/.test(w)) {
+        tokens.push({ type: "space" });
+      } else {
+        for (const ch of w) {
+          tokens.push({ type: "letter", value: ch });
         }
-        saveItems();
+        tokens.push({ type: "wordend" });
       }
-      input.remove();
-      target.hidden = false;
-      fillRow(node, item);
-      updateTotals();
-    };
+    }
+    return tokens;
+  }
 
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        finish(true);
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        finish(false);
+  function stopPlayback() {
+    if (playbackTimer) {
+      clearTimeout(playbackTimer);
+      playbackTimer = null;
+    }
+    playBtn.textContent = "▶️ Abspielen";
+  }
+
+  function highlightToken(index) {
+    const nodes = fingerspellingStrip.querySelectorAll(".letter-tile");
+    nodes.forEach((n) => n.classList.remove("active"));
+    if (nodes[index]) {
+      nodes[index].classList.add("active");
+      nodes[index].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  }
+
+  function buildFingerspellingStrip(text) {
+    fingerspellingStrip.innerHTML = "";
+    playbackTokens = tokenize(text).filter((t) => t.type === "letter");
+    playbackIndex = 0;
+    stopPlayback();
+
+    if (!text.trim()) return;
+
+    const words = text.trim().split(/\s+/);
+    for (const word of words) {
+      const wordEl = document.createElement("div");
+      wordEl.className = "word-group";
+      for (const ch of word) {
+        const svg = window.Fingeralphabet.renderHandSVG(ch);
+        const tile = document.createElement("div");
+        tile.className = "letter-tile";
+        if (svg) {
+          tile.innerHTML = svg;
+          const note = window.Fingeralphabet.getNote(ch);
+          if (note) tile.title = note;
+        } else {
+          tile.classList.add("letter-tile--plain");
+          tile.textContent = ch;
+        }
+        const caption = document.createElement("span");
+        caption.className = "letter-caption";
+        caption.textContent = ch.toUpperCase();
+        tile.appendChild(caption);
+        wordEl.appendChild(tile);
+      }
+      fingerspellingStrip.appendChild(wordEl);
+    }
+  }
+
+  function playFingerspelling() {
+    const tiles = fingerspellingStrip.querySelectorAll(".letter-tile");
+    if (!tiles.length) return;
+    if (playbackTimer) {
+      stopPlayback();
+      return;
+    }
+    playBtn.textContent = "⏸ Pause";
+    if (playbackIndex >= tiles.length) playbackIndex = 0;
+
+    const step = () => {
+      if (playbackIndex >= tiles.length) {
+        stopPlayback();
+        playbackIndex = 0;
+        return;
+      }
+      highlightToken(playbackIndex);
+      playbackIndex += 1;
+      playbackTimer = setTimeout(step, Number(speedRange.value));
+    };
+    step();
+  }
+
+  playBtn.addEventListener("click", playFingerspelling);
+
+  // ---- Untertitel-Anzeige --------------------------------------------
+
+  function showFinalText(text, saveToHistory) {
+    finalCaptionEl.textContent = text;
+    interimCaptionEl.textContent = "";
+    if (fingerspellingToggle.checked) buildFingerspellingStrip(text);
+    if (saveToHistory) addToHistory(text);
+  }
+
+  fontsizeRange.addEventListener("input", () => {
+    finalCaptionEl.style.fontSize = fontsizeRange.value + "px";
+  });
+  finalCaptionEl.style.fontSize = fontsizeRange.value + "px";
+
+  fingerspellingToggle.addEventListener("change", () => {
+    document.querySelector(".fingerspelling-section").classList.toggle(
+      "is-hidden",
+      !fingerspellingToggle.checked
+    );
+    if (fingerspellingToggle.checked && finalCaptionEl.textContent) {
+      buildFingerspellingStrip(finalCaptionEl.textContent);
+    }
+  });
+
+  textForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const text = textInput.value.trim();
+    if (!text) return;
+    showFinalText(text, true);
+    textForm.reset();
+  });
+
+  // ---- Spracherkennung -------------------------------------------------
+
+  function setStatus(message) {
+    micStatus.textContent = message;
+  }
+
+  if (!SpeechRecognitionCtor) {
+    micBtn.disabled = true;
+    micLabel.textContent = "Spracherkennung nicht unterstützt";
+    setStatus(
+      "Dieser Browser unterstützt keine Spracherkennung (Web Speech API). " +
+        "Bitte Text manuell eingeben oder einen aktuellen Chrome/Edge verwenden."
+    );
+  } else {
+    recognition = new SpeechRecognitionCtor();
+    recognition.lang = "de-DE";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.addEventListener("start", () => {
+      listening = true;
+      micBtn.classList.add("is-listening");
+      micLabel.textContent = "Mikrofon stoppen";
+      setStatus("Höre zu … sprich jetzt.");
+    });
+
+    recognition.addEventListener("end", () => {
+      listening = false;
+      micBtn.classList.remove("is-listening");
+      micLabel.textContent = "Mikrofon starten";
+      if (!micStatus.dataset.error) setStatus("Mikrofon gestoppt.");
+    });
+
+    recognition.addEventListener("error", (event) => {
+      delete micStatus.dataset.error;
+      if (event.error === "no-speech") {
+        setStatus("Keine Sprache erkannt – bitte weitersprechen.");
+        return;
+      }
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        micStatus.dataset.error = "1";
+        setStatus("Mikrofonzugriff wurde verweigert. Bitte in den Browser-Einstellungen erlauben.");
+        return;
+      }
+      micStatus.dataset.error = "1";
+      setStatus("Fehler bei der Spracherkennung: " + event.error);
+    });
+
+    recognition.addEventListener("result", (event) => {
+      let interim = "";
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          final += result[0].transcript;
+        } else {
+          interim += result[0].transcript;
+        }
+      }
+      if (interim) interimCaptionEl.textContent = interim;
+      if (final) showFinalText(final.trim(), true);
+    });
+
+    micBtn.addEventListener("click", () => {
+      if (listening) {
+        recognition.stop();
+      } else {
+        delete micStatus.dataset.error;
+        try {
+          recognition.start();
+        } catch {
+          // Erkennung läuft bereits oder wurde zu schnell erneut gestartet.
+        }
       }
     });
-    input.addEventListener("blur", () => finish(true));
   }
 
-  function render() {
-    itemListEl.innerHTML = "";
-
-    for (const item of items) {
-      const node = itemTemplate.content.firstElementChild.cloneNode(true);
-      fillRow(node, item);
-
-      node.querySelector(".plus").addEventListener("click", () => changeCount(item.id, 1));
-      node.querySelector(".minus").addEventListener("click", () => changeCount(item.id, -1));
-      node.querySelector(".remove-item").addEventListener("click", () => removeItem(item.id));
-
-      for (const field of ["name", "price"]) {
-        const el = node.querySelector(field === "price" ? ".item-price" : ".item-name");
-        el.classList.add("editable");
-        el.tabIndex = 0;
-        el.setAttribute("role", "button");
-        el.title = field === "price" ? "Preis bearbeiten" : "Bezeichnung bearbeiten";
-        el.addEventListener("click", () => beginEdit(node, item, field));
-        el.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            beginEdit(node, item, field);
-          }
-        });
-      }
-
-      itemListEl.appendChild(node);
-    }
-
-    updateTotals();
-  }
-
-  function changeCount(id, delta) {
-    const item = items.find((i) => i.id === id);
-    if (!item) return;
-    item.count = Math.max(0, item.count + delta);
-    saveItems();
-    const node = itemListEl.querySelector(`[data-id="${item.id}"]`);
-    if (node) fillRow(node, item);
-    updateTotals();
-  }
-
-  function removeItem(id) {
-    if (!confirm("Diesen Artikel wirklich entfernen?")) return;
-    items = items.filter((i) => i.id !== id);
-    saveItems();
-    render();
-  }
-
-  addItemForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const name = nameInput.value.trim();
-    const price = parsePrice(priceInput.value);
-    if (!name || price === null) return;
-
-    items.push({ id: cryptoId(), name, price, count: 0 });
-    saveItems();
-    render();
-
-    addItemForm.reset();
-    nameInput.focus();
-  });
-
-  resetBtn.addEventListener("click", () => {
-    if (!confirm("Alle Zähler auf 0 setzen? Die Artikel bleiben erhalten.")) return;
-    for (const item of items) item.count = 0;
-    saveItems();
-    render();
-  });
-
-  render();
+  renderHistory();
 })();

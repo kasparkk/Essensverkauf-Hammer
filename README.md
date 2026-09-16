@@ -1,75 +1,92 @@
-# Essensverkauf – Strichliste
+# Gebärden-Assistent
 
-Eine kleine, offline-fähige Web-App zur Erfassung eines Essensverkaufs
-(z. B. Schulfest, Vereinsfeier, Grillstand). Statt Papier und Strichliste
-tippt man bei jedem Verkauf auf den passenden Artikel – die App zählt
-mit und berechnet laufend die Einnahmen.
+Eine kleine, offline-fähige Web-App, die gesprochene Sprache in **große,
+gut lesbare Live-Untertitel** umwandelt und den Text zusätzlich als
+**vereinfachtes Fingeralphabet** darstellt – als Hilfsmittel für
+Gehörlose und Schwerhörige, um Gesprächen leichter folgen zu können.
+
+## Wichtiger Hinweis zur Ehrlichkeit dieser App
+
+Eine vollautomatische, grammatikalisch korrekte Übersetzung von
+gesprochener Sprache in echte Gebärdensprache (mit Mimik, Raumnutzung
+und ganzheitlichen Gebärden) ist mit heutiger Technik als reine
+Web-App **nicht seriös umsetzbar**. Eine App, die das vorgibt, würde
+Gehörlosen falsche oder unverständliche „Gebärden" als korrekt
+verkaufen – das wäre mehr Schaden als Nutzen.
+
+Diese App setzt deshalb bewusst auf zwei ehrliche, tatsächlich
+funktionierende Bausteine:
+
+1. **Live-Untertitel**: Spracherkennung (Web Speech API) wandelt
+   Gesprochenes in exakten Text um – groß, kontraststark, mit Verlauf.
+2. **Fingeralphabet-Schema**: Der Text wird zusätzlich Buchstabe für
+   Buchstabe mit stilisierten Hand-Piktogrammen dargestellt.
+
+   ⚠️ Dieses Fingeralphabet ist eine **vereinfachte, schematische
+   Annäherung** an gängige einhändige Fingeralphabete – **keine amtlich
+   geprüfte DGS-Referenz** (Deutsche Gebärdensprache). Für echtes
+   Lernen oder wichtige Kommunikation bitte einen
+   Gebärdensprachdolmetscher, einen anerkannten DGS-Kurs oder einen
+   Gehörlosenverband konsultieren.
 
 ## Funktionen
 
-- **Artikel anlegen**: Bezeichnung und Stückpreis frei definierbar
-  (z. B. „Bratwurst – 2,50 €").
-- **Tipp-Zähler (Strichliste)**: Pro Artikel ein großer „+"-Button zum
-  Antippen bei jedem Verkauf, sowie ein „−"-Button zum Korrigieren von
-  Fehltipps.
-- **Bezeichnung und Preis ändern**: Ein Tipp auf den Namen oder den Preis
-  macht das Feld direkt editierbar. Enter übernimmt, Escape verwirft. Der
-  Zählerstand bleibt dabei erhalten, ein Preis lässt sich also auch
-  mitten im Verkauf noch korrigieren. Preise dürfen mit Komma
-  geschrieben werden („2,50"), Punkt geht ebenso.
-- **Live-Summen**: Verkaufte Portionen gesamt und Gesamteinnahmen
-  werden oben permanent angezeigt, Zwischensummen je Artikel unter dem
-  jeweiligen Zähler.
-- **Speicherung im Browser**: Alle Zähler und Artikel werden in
-  `localStorage` gehalten – ein versehentliches Neuladen der Seite
-  verliert keine Daten.
-- **Zurücksetzen**: Ein Button setzt alle Zähler auf 0 zurück (Artikel
-  bleiben erhalten), z. B. für den nächsten Verkaufstag.
+- **Live-Untertitel**: Mikrofon-Button startet die Spracherkennung
+  (Deutsch), Zwischen- und Endergebnisse erscheinen sofort in großer
+  Schrift (Schriftgröße einstellbar).
+- **Manuelle Texteingabe**: Alternative/Ergänzung zum Mikrofon, auch
+  nützlich in Browsern ohne Spracherkennung.
+- **Fingeralphabet-Anzeige**: Der aktuelle Text wird in Hand-Piktogramme
+  je Buchstabe zerlegt, mit Abspiel-Funktion (Play/Pause, Tempo
+  einstellbar), die Buchstabe für Buchstabe hervorhebt.
+- **Verlauf**: Frühere Sätze bleiben in einer Liste erhalten (inkl.
+  Uhrzeit) und lassen sich erneut im Fingeralphabet anzeigen.
+- **Speicherung im Browser**: Verlauf wird in `localStorage` gehalten.
+- **Installierbar (PWA)**: Manifest und Icons erlauben das Ablegen auf
+  dem Homescreen.
 
 ## Nutzung
 
-Die App besteht aus reinem HTML/CSS/JavaScript ohne Build-Schritt und
-ohne Server-Abhängigkeit.
+Reines HTML/CSS/JavaScript ohne Build-Schritt, ohne Server-Abhängigkeit
+(bis auf die Spracherkennung selbst, die in Chrome/Edge einen
+Online-Spracherkennungsdienst nutzt).
 
-1. `index.html` im Browser öffnen (Doppelklick reicht, oder z. B. mit
-   `python3 -m http.server` lokal ausliefern).
-2. Artikel über das Formular „Neuen Artikel anlegen" hinzufügen, oder
-   die drei vordefinierten Beispielartikel (Bratwurst, Kuchen, Getränk)
-   direkt verwenden bzw. anpassen.
-3. Während des Verkaufs bei jedem Verkauf auf den „+"-Button des
-   jeweiligen Artikels tippen.
-4. Am Ende die Gesamteinnahmen und verkauften Portionen oben ablesen.
+1. `index.html` im Browser öffnen (z. B. mit `python3 -m http.server`
+   lokal ausliefern – für Mikrofonzugriff wird in den meisten Browsern
+   HTTPS oder `localhost` benötigt).
+2. Auf „Mikrofon starten" tippen, Mikrofonzugriff erlauben und
+   sprechen – oder Text unten manuell eintippen.
+3. Der Text erscheint groß als Untertitel; darunter wird er automatisch
+   im (vereinfachten) Fingeralphabet dargestellt.
+4. Mit „Abspielen" die Fingeralphabet-Anzeige Buchstabe für Buchstabe
+   durchlaufen lassen, Tempo per Schieberegler anpassen.
 
-Die App ist für Smartphones/Tablets optimiert (große Tipp-Flächen),
-funktioniert aber ebenso am Desktop.
+**Browser-Hinweis**: Die Spracherkennung nutzt die Web Speech API, die
+zuverlässig vor allem in Chrome/Edge (Desktop und Android) unterstützt
+wird. Ohne Unterstützung bleibt die manuelle Texteingabe als
+vollwertige Alternative.
 
 ## Auf dem Handy als App ablegen
-
-Die Seite bringt ein Web-App-Manifest und Homescreen-Icons mit, lässt
-sich also wie eine App ablegen und startet dann ohne Browserleiste:
 
 - **iOS/Safari**: Teilen-Menü → „Zum Home-Bildschirm"
 - **Android/Chrome**: Menü → „App installieren" bzw. „Zum Startbildschirm
   hinzufügen"
 
-Das Icon ist so angelegt, dass der Burger auch dann vollständig sichtbar
-bleibt, wenn das Betriebssystem es rund oder abgerundet zuschneidet.
-
 ## Dateien
 
-| Datei         | Zweck                                             |
-|---------------|----------------------------------------------------|
-| `index.html`  | Struktur der Seite                                 |
-| `style.css`   | Layout und Optik (große Buttons, mobil-freundlich) |
-| `app.js`      | Logik: Artikelverwaltung, Zählung, Speicherung     |
-| `logo.svg`    | Burger-Logo (Kopfzeile und Favicon)                |
-| `icon.svg`    | Quelle des App-Icons (Burger auf Hintergrundkachel) |
-| `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Aus `icon.svg` gerenderte Homescreen-Icons |
-| `manifest.webmanifest` | Web-App-Manifest (Name, Farben, Icons)    |
-| `_headers`    | Netlify: korrekter MIME-Typ für das Manifest       |
+| Datei                   | Zweck                                                        |
+|-------------------------|---------------------------------------------------------------|
+| `index.html`            | Struktur der Seite                                            |
+| `style.css`             | Layout und Optik                                               |
+| `app.js`                | Spracherkennung, Untertitel, Verlauf, Wiedergabe-Steuerung     |
+| `fingeralphabet.js`     | Datenmodell + SVG-Renderer für das vereinfachte Fingeralphabet |
+| `logo.svg`, `icon.svg`  | App-Icon (Hand-Piktogramm)                                     |
+| `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Homescreen-Icons |
+| `manifest.webmanifest`  | Web-App-Manifest (Name, Farben, Icons)                         |
+| `_headers`              | Netlify: korrekter MIME-Typ für das Manifest                   |
 
 ## Hosting
 
-Da es sich um statische Dateien handelt, lässt sich das Projekt direkt
-über GitHub Pages veröffentlichen (Branch/Ordner als Pages-Quelle
-einstellen) oder auf jedem beliebigen Webserver ablegen.
+Statische Dateien – direkt über GitHub Pages, Netlify oder jeden
+anderen Webserver veröffentlichbar. Für Mikrofonzugriff wird HTTPS
+(oder `localhost`) vorausgesetzt.
