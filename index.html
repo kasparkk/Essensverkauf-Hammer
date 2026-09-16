@@ -33,15 +33,36 @@
         eigene Grammatik, Mimik und ganzheitliche Gebärden – das kann eine
         App nicht zuverlässig automatisch erzeugen. Diese App bietet daher
         zwei ehrliche Bausteine: <strong>Live-Untertitel</strong> (exakter
-        Text) und ein <strong>vereinfachtes Fingeralphabet-Schema</strong>
-        zum buchstabenweisen Mitlesen. Das Fingeralphabet ist eine
-        schematische Lern-/Demo-Darstellung, <strong>keine amtlich
-        geprüfte DGS-Referenz</strong>. Für echte Kommunikation bitte
-        einen Gebärdensprachdolmetscher oder anerkannte DGS-Kurse nutzen.
+        Text, Sprache einstellbar) und einen <strong>3D-Avatar mit
+        vereinfachtem Fingeralphabet-Schema</strong> zum buchstabenweisen
+        Mitlesen. Avatar und Fingeralphabet sind eine schematische
+        Lern-/Demo-Darstellung, <strong>keine amtlich geprüfte
+        DGS-Referenz</strong> – es wird buchstabiert, nicht in echter
+        Gebärdensprache gebärdet. Für echte Kommunikation bitte einen
+        Gebärdensprachdolmetscher oder anerkannte DGS-Kurse nutzen.
       </p>
     </section>
 
     <section class="controls" aria-label="Steuerung">
+      <label for="lang-select" class="lang-label">Gesprochene Sprache</label>
+      <select id="lang-select" class="lang-select">
+        <option value="de-DE">Deutsch (Deutschland)</option>
+        <option value="de-AT">Deutsch (Österreich)</option>
+        <option value="de-CH">Deutsch (Schweiz)</option>
+        <option value="en-US">Englisch (USA)</option>
+        <option value="en-GB">Englisch (UK)</option>
+        <option value="fr-FR">Französisch</option>
+        <option value="es-ES">Spanisch</option>
+        <option value="it-IT">Italienisch</option>
+        <option value="pt-PT">Portugiesisch</option>
+        <option value="nl-NL">Niederländisch</option>
+        <option value="pl-PL">Polnisch</option>
+        <option value="tr-TR">Türkisch</option>
+        <option value="ru-RU">Russisch</option>
+        <option value="uk-UA">Ukrainisch</option>
+        <option value="ar-SA">Arabisch</option>
+      </select>
+
       <button id="mic-btn" type="button" class="mic-btn">
         <span class="mic-icon" aria-hidden="true">&#127908;</span>
         <span id="mic-label">Mikrofon starten</span>
@@ -65,12 +86,13 @@
 
     <section class="fingerspelling-section" aria-label="Fingeralphabet">
       <div class="section-head">
-        <h2>Fingeralphabet</h2>
+        <h2>Gebärden-Avatar &amp; Fingeralphabet</h2>
         <label class="toggle">
           <input type="checkbox" id="fingerspelling-toggle" checked />
           anzeigen
         </label>
       </div>
+      <div id="avatar-canvas" class="avatar-canvas" aria-label="3D-Avatar zeigt das Fingeralphabet" role="img"></div>
       <div id="fingerspelling-strip" class="fingerspelling-strip" aria-live="off"></div>
       <div class="playback-controls">
         <button id="play-btn" type="button" title="Abspielen/Pause">&#9654;&#65039; Abspielen</button>
@@ -103,5 +125,6 @@
 
   <script src="fingeralphabet.js"></script>
   <script src="app.js"></script>
+  <script type="module" src="avatar3d.js"></script>
 </body>
 </html>

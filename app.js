@@ -19,6 +19,11 @@
   const historyList = document.getElementById("history-list");
   const historyItemTemplate = document.getElementById("history-item-template");
   const clearHistoryBtn = document.getElementById("clear-history-btn");
+  const langSelect = document.getElementById("lang-select");
+
+  const LANG_STORAGE_KEY = "gebaerden-assistent.lang.v1";
+  const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
+  if (savedLang) langSelect.value = savedLang;
 
   const SpeechRecognitionCtor =
     window.SpeechRecognition || window.webkitSpeechRecognition || null;
@@ -122,6 +127,7 @@
     playbackTokens = tokenize(text).filter((t) => t.type === "letter");
     playbackIndex = 0;
     stopPlayback();
+    if (window.SignAvatar) window.SignAvatar.reset();
 
     if (!text.trim()) return;
 
@@ -143,7 +149,7 @@
         }
         const caption = document.createElement("span");
         caption.className = "letter-caption";
-        caption.textContent = ch.toUpperCase();
+        caption.textContent = ch === "ß" ? ch : ch.toUpperCase();
         tile.appendChild(caption);
         wordEl.appendChild(tile);
       }
@@ -165,11 +171,15 @@
       if (playbackIndex >= tiles.length) {
         stopPlayback();
         playbackIndex = 0;
+        if (window.SignAvatar) window.SignAvatar.reset();
         return;
       }
+      const speed = Number(speedRange.value);
       highlightToken(playbackIndex);
+      const token = playbackTokens[playbackIndex];
+      if (window.SignAvatar && token) window.SignAvatar.showLetter(token.value, speed * 0.8);
       playbackIndex += 1;
-      playbackTimer = setTimeout(step, Number(speedRange.value));
+      playbackTimer = setTimeout(step, speed);
     };
     step();
   }
@@ -223,7 +233,7 @@
     );
   } else {
     recognition = new SpeechRecognitionCtor();
-    recognition.lang = "de-DE";
+    recognition.lang = langSelect.value || "de-DE";
     recognition.continuous = true;
     recognition.interimResults = true;
 
@@ -269,6 +279,15 @@
       }
       if (interim) interimCaptionEl.textContent = interim;
       if (final) showFinalText(final.trim(), true);
+    });
+
+    langSelect.addEventListener("change", () => {
+      localStorage.setItem(LANG_STORAGE_KEY, langSelect.value);
+      recognition.lang = langSelect.value;
+      if (listening) {
+        recognition.addEventListener("end", () => recognition.start(), { once: true });
+        recognition.stop();
+      }
     });
 
     micBtn.addEventListener("click", () => {

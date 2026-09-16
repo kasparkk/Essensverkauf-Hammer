@@ -45,6 +45,15 @@
     "ß": { fingers: [0, 0, 0, 0], thumb: "in", note: "vereinfacht wie „ss“ dargestellt" },
   };
 
+  /**
+   * "ß".toUpperCase() ergibt in JavaScript "SS" statt "ß" – das würde
+   * den Tabellen-Lookup für ß zerstören. Deshalb ß gesondert behandeln.
+   */
+  function normalizeKey(letter) {
+    const raw = String(letter || "");
+    return raw === "ß" ? raw : raw.toUpperCase();
+  }
+
   const FINGER_X = [36, 46, 56, 66];
   const FINGER_LEN = [30, 34, 30, 24];
 
@@ -187,7 +196,7 @@
    * zurück, wenn kein Piktogramm existiert (z. B. Leerzeichen).
    */
   function renderHandSVG(letter) {
-    const upper = String(letter || "").toUpperCase();
+    const upper = normalizeKey(letter);
     const cfg = LETTERS[upper];
     if (!cfg) return null;
 
@@ -227,12 +236,22 @@
   }
 
   function hasLetter(letter) {
-    return !!LETTERS[String(letter || "").toUpperCase()];
+    return !!LETTERS[normalizeKey(letter)];
   }
 
   function getNote(letter) {
-    const cfg = LETTERS[String(letter || "").toUpperCase()];
+    const cfg = LETTERS[normalizeKey(letter)];
     return (cfg && cfg.note) || "";
+  }
+
+  /**
+   * Gibt die rohe Konfiguration eines Buchstabens zurück (für andere
+   * Renderer, z. B. den 3D-Avatar), damit die Gesten-Daten nur an einer
+   * Stelle gepflegt werden. Liefert eine Kopie, kein Original-Objekt.
+   */
+  function getConfig(letter) {
+    const cfg = LETTERS[normalizeKey(letter)];
+    return cfg ? JSON.parse(JSON.stringify(cfg)) : null;
   }
 
   global.Fingeralphabet = {
@@ -240,5 +259,6 @@
     renderHandSVG: renderHandSVG,
     hasLetter: hasLetter,
     getNote: getNote,
+    getConfig: getConfig,
   };
 })(window);

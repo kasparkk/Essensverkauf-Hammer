@@ -84,6 +84,24 @@ section {
   text-align: center;
 }
 
+.lang-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+
+.lang-select {
+  width: 100%;
+  max-width: 280px;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+  margin: 0 auto 0.9rem;
+  display: block;
+}
+
 .mic-btn {
   display: inline-flex;
   align-items: center;
@@ -189,6 +207,25 @@ section {
 
 .fingerspelling-section.is-hidden .fingerspelling-strip,
 .fingerspelling-section.is-hidden .playback-controls {
+  display: none;
+}
+
+.avatar-canvas {
+  width: 100%;
+  height: 220px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #eef2fa, #e2e8f5);
+  overflow: hidden;
+  margin-bottom: 0.8rem;
+}
+
+.avatar-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fingerspelling-section.is-hidden .avatar-canvas {
   display: none;
 }
 
