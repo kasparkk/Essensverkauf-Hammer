@@ -50,10 +50,12 @@ Fußball-Minispielen:
 
 - **Match** (`match.html`): ein spielbares 5-gegen-5-Match gegen den
   Computer, angelehnt an Arcade-Fußballspiele wie Dream League Soccer.
-  Steuerung per Pfeiltasten/WASD (Bewegen), Leertaste (Schuss), X (Pass) –
-  am Handy per Ziehen im Feld und den Buttons „Schießen"/„Pass". Die
-  Steuerung springt automatisch zum ballnächsten eigenen Spieler. Nach 90
-  Sekunden Spielzeit gibt es den Endstand.
+  Gebaut mit der [Phaser](https://phaser.io/)-Game-Engine (per CDN
+  eingebunden, keine Installation nötig) für Bewegung, Physik und
+  Kollisionen. Steuerung per Pfeiltasten/WASD (Bewegen), Leertaste
+  (Schuss), X (Pass) – am Handy per Ziehen im Feld und den Buttons
+  „Schießen"/„Pass". Die Steuerung springt automatisch zum ballnächsten
+  eigenen Spieler. Nach 90 Sekunden Spielzeit gibt es den Endstand.
 - **Elfmeterschießen** (`fussball.html`): Mit Maus oder Finger im Tor
   zielen (ziehen) und mit „Schießen" auslösen. Der Torwart wird von
   Schuss zu Schuss etwas stärker; nach 5 Elfmetern gibt es das Ergebnis

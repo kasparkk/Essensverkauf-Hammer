@@ -124,14 +124,19 @@ body {
   touch-action: none;
 }
 
-#pitch-canvas {
+#pitch-container {
   width: 100%;
-  height: auto;
-  display: block;
+  aspect-ratio: 760 / 460;
   border-radius: 14px;
+  overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   background: #2e8b3d;
   cursor: pointer;
+  line-height: 0;
+}
+
+#pitch-container canvas {
+  display: block;
 }
 
 .event-banner {
