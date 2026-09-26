@@ -1,11 +1,17 @@
 # Gebärden-Assistent
 
-Eine kleine, offline-fähige Web-App, die gesprochene Sprache (Sprache
-wählbar) in **große, gut lesbare Live-Untertitel** umwandelt und den
-Text zusätzlich über einen **3D-Gebärden-Avatar** (Three.js) Buchstabe
-für Buchstabe im vereinfachten Fingeralphabet darstellt – als
-Hilfsmittel für Gehörlose und Schwerhörige, um Gesprächen leichter zu
-folgen.
+Eine kleine, offline-fähige Web-App mit zwei Modi (Reiter oben in der
+App):
+
+- **Live-Untertitel**: gesprochene Sprache (Sprache wählbar) wird in
+  **große, gut lesbare Untertitel** umgewandelt, zusätzlich über einen
+  **3D-Gebärden-Avatar** (Three.js) Buchstabe für Buchstabe im
+  vereinfachten Fingeralphabet dargestellt – als Hilfsmittel für
+  Gehörlose und Schwerhörige, um Gesprächen leichter zu folgen.
+- **Lernen für Kinder**: derselbe 3D-Avatar wird zum Lernspiel für das
+  Fingeralphabet – als Quiz (Avatar zeigt, Kind rät den Buchstaben)
+  oder im Nachmach-Modus (Kind wählt einen Buchstaben, Avatar zeigt ihn
+  in Zeitlupe zum Nachmachen), mit Fortschrittsanzeige.
 
 ## Wichtiger Hinweis zur Ehrlichkeit dieser App
 
@@ -52,7 +58,13 @@ funktionierende Bausteine:
   Abspiel-Funktion (Play/Pause, Tempo einstellbar).
 - **Verlauf**: Frühere Sätze bleiben in einer Liste erhalten (inkl.
   Uhrzeit) und lassen sich erneut im Fingeralphabet anzeigen.
-- **Speicherung im Browser**: Verlauf wird in `localStorage` gehalten.
+- **Lernen für Kinder** (eigener Reiter): Quiz-Modus (Avatar zeigt einen
+  Buchstaben, Kind wählt aus vier Möglichkeiten die richtige Antwort)
+  und Nachmach-Modus (Kind tippt einen Buchstaben an, Avatar zeigt ihn
+  langsam); Fortschritt pro Buchstabe wird gespeichert und als
+  Fortschrittsbalken angezeigt.
+- **Speicherung im Browser**: Verlauf und Lernfortschritt werden in
+  `localStorage` gehalten.
 - **Installierbar (PWA)**: Manifest und Icons erlauben das Ablegen auf
   dem Homescreen.
 
@@ -98,6 +110,8 @@ angezeigt, ohne Handform.
 | `app.js`                | Spracherkennung, Sprachauswahl, Untertitel, Verlauf, Wiedergabe |
 | `fingeralphabet.js`     | Datenmodell + SVG-Renderer für das vereinfachte Fingeralphabet |
 | `avatar3d.js`           | Three.js-Avatar, animiert dieselben Fingeralphabet-Daten in 3D |
+| `kids.js`               | Kinder-Lernmodus: Quiz + Nachmachen, Fortschrittsspeicherung   |
+| `tabs.js`               | Umschalten zwischen Live-Modus und Kinder-Lernmodus            |
 | `logo.svg`, `icon.svg`  | App-Icon (Hand-Piktogramm)                                     |
 | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Homescreen-Icons |
 | `manifest.webmanifest`  | Web-App-Manifest (Name, Farben, Icons)                         |

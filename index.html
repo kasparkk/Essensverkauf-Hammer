@@ -21,28 +21,39 @@
       <img class="logo" src="logo.svg" alt="" width="48" height="48" />
       <div class="brand-text">
         <h1>Gebärden-Assistent</h1>
-        <p class="subtitle">Live-Untertitel &amp; Fingeralphabet aus gesprochener Sprache</p>
+        <p class="subtitle">Live-Untertitel, Gebärden-Avatar &amp; Fingeralphabet-Lernspiel</p>
       </div>
     </div>
   </header>
 
   <main>
+    <nav class="mode-tabs" aria-label="Modus wählen">
+      <button type="button" class="mode-tab is-active" id="tab-live" data-mode="live" aria-selected="true">
+        Live-Untertitel
+      </button>
+      <button type="button" class="mode-tab" id="tab-kids" data-mode="kids" aria-selected="false">
+        Lernen für Kinder
+      </button>
+    </nav>
+
     <section class="disclaimer" aria-label="Wichtiger Hinweis">
       <p>
         <strong>Wichtiger Hinweis:</strong> Echte Gebärdensprache hat eine
         eigene Grammatik, Mimik und ganzheitliche Gebärden – das kann eine
         App nicht zuverlässig automatisch erzeugen. Diese App bietet daher
-        zwei ehrliche Bausteine: <strong>Live-Untertitel</strong> (exakter
-        Text, Sprache einstellbar) und einen <strong>3D-Avatar mit
+        ehrliche Bausteine: <strong>Live-Untertitel</strong> (exakter Text,
+        Sprache einstellbar) und einen <strong>3D-Avatar mit
         vereinfachtem Fingeralphabet-Schema</strong> zum buchstabenweisen
-        Mitlesen. Avatar und Fingeralphabet sind eine schematische
-        Lern-/Demo-Darstellung, <strong>keine amtlich geprüfte
-        DGS-Referenz</strong> – es wird buchstabiert, nicht in echter
-        Gebärdensprache gebärdet. Für echte Kommunikation bitte einen
-        Gebärdensprachdolmetscher oder anerkannte DGS-Kurse nutzen.
+        Mitlesen bzw. Üben. Avatar und Fingeralphabet sind eine
+        schematische Lern-/Demo-Darstellung, <strong>keine amtlich
+        geprüfte DGS-Referenz</strong> – es wird buchstabiert, nicht in
+        echter Gebärdensprache gebärdet. Für echte Kommunikation oder
+        Sprachförderung bitte einen Gebärdensprachdolmetscher, eine
+        Frühförderstelle oder anerkannte DGS-Kurse nutzen.
       </p>
     </section>
 
+    <div id="mode-live">
     <section class="controls" aria-label="Steuerung">
       <label for="lang-select" class="lang-label">Gesprochene Sprache</label>
       <select id="lang-select" class="lang-select">
@@ -113,6 +124,46 @@
       </div>
       <ul id="history-list" class="history-list"></ul>
     </section>
+    </div>
+
+    <div id="mode-kids" hidden>
+      <section class="kids-intro" aria-label="Fingeralphabet lernen">
+        <h2>Fingeralphabet-Lernspiel</h2>
+        <p>
+          Buchstaben mit dem Gebärden-Avatar üben – im Quiz erraten oder
+          im Übungsmodus selbst nachmachen.
+        </p>
+      </section>
+
+      <div id="kids-avatar-slot" class="kids-avatar-slot"></div>
+
+      <nav class="kids-subtabs" aria-label="Lernmodus wählen">
+        <button type="button" class="kids-subtab is-active" id="kidstab-quiz" data-kidsmode="quiz">
+          🎯 Quiz
+        </button>
+        <button type="button" class="kids-subtab" id="kidstab-practice" data-kidsmode="practice">
+          🖐️ Nachmachen
+        </button>
+      </nav>
+
+      <section id="kids-quiz-panel" class="kids-panel" aria-label="Quiz">
+        <p class="quiz-question">Welcher Buchstabe ist das?</p>
+        <div id="quiz-options" class="quiz-options"></div>
+        <p id="quiz-feedback" class="quiz-feedback" aria-live="polite"></p>
+        <button id="quiz-repeat-btn" type="button" class="quiz-repeat-btn">🔁 Nochmal zeigen</button>
+      </section>
+
+      <section id="kids-practice-panel" class="kids-panel" hidden aria-label="Nachmachen">
+        <p class="practice-hint">Buchstaben antippen – der Avatar zeigt ihn in Zeitlupe.</p>
+        <div id="practice-grid" class="practice-grid"></div>
+      </section>
+
+      <section class="kids-progress-section" aria-label="Fortschritt">
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <p id="progress-text" class="progress-text">0 von 30 Buchstaben gelernt</p>
+        <button id="kids-reset-btn" type="button" class="kids-reset-btn">Fortschritt zurücksetzen</button>
+      </section>
+    </div>
   </main>
 
   <template id="history-item-template">
@@ -125,6 +176,8 @@
 
   <script src="fingeralphabet.js"></script>
   <script src="app.js"></script>
+  <script src="kids.js"></script>
+  <script src="tabs.js"></script>
   <script type="module" src="avatar3d.js"></script>
 </body>
 </html>
