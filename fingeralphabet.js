@@ -1,8 +1,23 @@
 /**
- * Vereinfachtes Fingeralphabet-Schema (angenähert an gängige einhändige
- * Fingeralphabete). Dies ist eine schematische Lern-/Demo-Darstellung,
- * KEINE amtlich geprüfte DGS-Referenz. Siehe README für Hinweise zu
- * verlässlichen Quellen (z. B. Gehörlosenverbände, DGS-Kurse).
+ * Vereinfachtes Fingeralphabet-Schema, orientiert am deutschen
+ * (DGS-)Fingeralphabet – nicht am amerikanischen (ASL), das sich bei
+ * mehreren Buchstaben unterscheidet. Datenbasis: Recherche anhand von
+ * de.wikipedia.org/wiki/Fingeralphabet, fakoo.de/finger.html und
+ * gebaerdenlernen.de (Stand 2026), abgeglichen über mehrere Quellen.
+ * Trotzdem: eine schematische Lern-/Demo-Darstellung, KEINE amtlich
+ * geprüfte DGS-Referenz und nicht von Muttersprachler:innen
+ * gegengeprüft. Siehe README für Hinweise zu verlässlichen Quellen
+ * (z. B. Gehörlosenverbände, DGS-Kurse).
+ *
+ * Bekannte Vereinfachungen:
+ * - J, Z und das Bewegungs-Element bei Ä/Ö/Ü/ß erfordern in echt eine
+ *   Bewegung (gezeichneter Buchstabe bzw. kurzer Schwung); wir zeigen
+ *   nur eine angenäherte Handform plus ggf. Wackel-Animation im Avatar.
+ * - G und H werden in der Quelle mit Handrücken zur Kamera beschrieben;
+ *   unser Avatar dreht dafür die Hand (palmYaw), das 2D-Icon kann das
+ *   nicht abbilden.
+ * - ß wird praxisüblich einfach als „ss“ gebärdet/buchstabiert (auch in
+ *   Lehrmaterial üblich) – deshalb nutzt ß dieselbe Form wie S.
  *
  * Jeder Buchstabe wird als Konfiguration für einen generischen
  * Hand-Piktogramm-Renderer beschrieben (index/middle/ring/pinky
@@ -13,36 +28,79 @@
 
   // fingers: [index, middle, ring, pinky] – true = ausgestreckt
   const LETTERS = {
-    A: { fingers: [0, 0, 0, 0], thumb: "in" },
+    A: { fingers: [0, 0, 0, 0], thumb: "in", note: "Daumen liegt seitlich an der Faust an" },
     B: { fingers: [1, 1, 1, 1], thumb: "in" },
     C: { fingers: [0, 0, 0, 0], thumb: "out", shape: "curve" },
     D: { fingers: [1, 0, 0, 0], thumb: "loop", loopWith: 1 },
     E: { fingers: [0, 0, 0, 0], thumb: "in", curl: true },
-    F: { fingers: [0, 1, 1, 1], thumb: "loop", loopWith: 0 },
-    G: { fingers: [1, 0, 0, 0], thumb: "out", rotate: -90 },
-    H: { fingers: [1, 1, 0, 0], thumb: "in", rotate: -90 },
+    F: { fingers: [0, 1, 1, 1], thumb: "loop", loopWith: 0, spread: true },
+    G: {
+      fingers: [1, 0, 0, 0],
+      thumb: "out",
+      rotate: -90,
+      palmYaw: 180,
+      note: "in echt mit Handrücken zur Kamera",
+    },
+    H: {
+      fingers: [1, 1, 0, 0],
+      thumb: "in",
+      rotate: -90,
+      palmYaw: 180,
+      note: "in echt mit Handrücken zur Kamera",
+    },
     I: { fingers: [0, 0, 0, 1], thumb: "in" },
-    J: { fingers: [0, 0, 0, 1], thumb: "in", rotate: 20, note: "mit Schwungbewegung gezeichnet" },
+    J: {
+      fingers: [0, 0, 0, 1],
+      thumb: "in",
+      motion: "wiggle",
+      note: "mit Schwungbewegung gezeichnet",
+    },
     K: { fingers: [1, 1, 0, 0], thumb: "out" },
     L: { fingers: [1, 0, 0, 0], thumb: "out" },
-    M: { fingers: [0, 0, 0, 0], thumb: "in", note: "Daumen unter drei Fingern" },
-    N: { fingers: [0, 0, 0, 0], thumb: "in", note: "Daumen unter zwei Fingern" },
+    M: {
+      fingers: [1, 1, 1, 0],
+      thumb: "in",
+      rotate: 180,
+      note: "Handfläche nach unten, Daumen unter den drei Fingern",
+    },
+    N: {
+      fingers: [1, 1, 0, 0],
+      thumb: "in",
+      rotate: 180,
+      note: "Handfläche nach unten, Daumen unter den zwei Fingern",
+    },
     O: { fingers: [0, 0, 0, 0], thumb: "out", shape: "curve", closed: true },
-    P: { fingers: [1, 1, 0, 0], thumb: "out", rotate: 120 },
-    Q: { fingers: [1, 0, 0, 0], thumb: "out", rotate: 110 },
+    P: { fingers: [1, 1, 0, 0], thumb: "out", rotate: 150 },
+    Q: { fingers: [1, 0, 0, 0], thumb: "out", rotate: 160 },
     R: { fingers: [1, 1, 0, 0], thumb: "in", crossed: true },
-    S: { fingers: [0, 0, 0, 0], thumb: "in" },
-    T: { fingers: [0, 0, 0, 0], thumb: "in", note: "Daumen zwischen Zeige- und Mittelfinger" },
+    S: { fingers: [0, 0, 0, 0], thumb: "across", note: "Daumen liegt vorne über den Fingern (anders als A)" },
+    T: {
+      fingers: [1, 0, 0, 0],
+      thumb: "out",
+      rotate: -90,
+      note: "Zeigefinger seitwärts, Daumen liegt oben auf dem Zeigefinger (nicht dazwischen wie im ASL)",
+    },
     U: { fingers: [1, 1, 0, 0], thumb: "in" },
     V: { fingers: [1, 1, 0, 0], thumb: "in", spread: true },
     W: { fingers: [1, 1, 1, 0], thumb: "in", spread: true },
-    X: { fingers: [1, 0, 0, 0], thumb: "in", hook: true },
+    X: { fingers: [1, 0, 0, 0], thumb: "in", hook: true, rotate: -90 },
     Y: { fingers: [0, 0, 0, 1], thumb: "out" },
-    Z: { fingers: [1, 0, 0, 0], thumb: "in", note: "gezeichnetes Z (Bewegung)" },
-    "Ä": { fingers: [0, 0, 0, 0], thumb: "in", umlaut: true },
-    "Ö": { fingers: [0, 0, 0, 0], thumb: "out", shape: "curve", closed: true, umlaut: true },
-    "Ü": { fingers: [1, 1, 0, 0], thumb: "in", umlaut: true },
-    "ß": { fingers: [0, 0, 0, 0], thumb: "in", note: "vereinfacht wie „ss“ dargestellt" },
+    Z: { fingers: [1, 0, 0, 0], thumb: "in", motion: "wiggle", note: "gezeichnetes Z (Bewegung)" },
+    "Ä": { fingers: [0, 0, 0, 0], thumb: "in", umlaut: true, motion: "wiggle" },
+    "Ö": {
+      fingers: [0, 0, 0, 0],
+      thumb: "out",
+      shape: "curve",
+      closed: true,
+      umlaut: true,
+      motion: "wiggle",
+    },
+    "Ü": { fingers: [1, 1, 0, 0], thumb: "in", umlaut: true, motion: "wiggle" },
+    "ß": {
+      fingers: [0, 0, 0, 0],
+      thumb: "across",
+      note: "praxisüblich vereinfacht wie „ss“ dargestellt",
+    },
   };
 
   /**
@@ -112,6 +170,18 @@
         height: 10,
         rx: 4,
         transform: "rotate(-15 27 69)",
+      });
+    }
+    if (mode === "across") {
+      // Daumen liegt waagerecht VOR den Fingern (Unterschied zu "in",
+      // wo er seitlich an der Faust anliegt) – z. B. bei S statt A.
+      return svgEl("rect", {
+        class: "thumb thumb-across",
+        x: 30,
+        y: 62,
+        width: 34,
+        height: 11,
+        rx: 5,
       });
     }
     if (mode === "loop") {
@@ -221,6 +291,7 @@
       inner += renderThumb("loop");
       inner += loopConnector(cfg.loopWith);
     }
+    if (cfg.thumb === "across") inner += renderThumb("across");
 
     if (cfg.umlaut) inner += umlautDots();
 

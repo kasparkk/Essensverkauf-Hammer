@@ -468,6 +468,16 @@ section {
   color: var(--muted);
 }
 
+.kids-parent-note {
+  margin-top: 0.6rem !important;
+  font-size: 0.8rem;
+  background: #fff6e9;
+  border: 1px solid #f0d9ad;
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  color: var(--text) !important;
+}
+
 .kids-avatar-slot {
   margin-bottom: 1rem;
 }

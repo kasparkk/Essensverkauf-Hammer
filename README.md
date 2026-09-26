@@ -35,12 +35,23 @@ funktionierende Bausteine:
    mit Hand-Piktogrammen und Buchstaben-Beschriftung mit.
 
    ⚠️ Avatar und Fingeralphabet sind eine **vereinfachte, schematische
-   Annäherung** an gängige einhändige Fingeralphabete – **keine amtlich
-   geprüfte DGS-Referenz** (Deutsche Gebärdensprache) und **keine echte
-   Gebärdensprache** (es wird buchstabiert, nicht gebärdet). Für echtes
-   Lernen oder wichtige Kommunikation bitte einen
-   Gebärdensprachdolmetscher, einen anerkannten DGS-Kurs oder einen
-   Gehörlosenverband konsultieren.
+   Annäherung** an das deutsche (DGS-)Fingeralphabet – **keine amtlich
+   geprüfte DGS-Referenz** und **keine echte Gebärdensprache** (es wird
+   buchstabiert, nicht gebärdet). Für echtes Lernen oder wichtige
+   Kommunikation bitte einen Gebärdensprachdolmetscher, einen
+   anerkannten DGS-Kurs oder einen Gehörlosenverband konsultieren.
+
+   **Datenbasis**: Die Handformen in `fingeralphabet.js` sind gezielt am
+   *deutschen* Fingeralphabet ausgerichtet (nicht am amerikanischen
+   ASL, das sich bei mehreren Buchstaben unterscheidet), recherchiert
+   anhand mehrerer Quellen (u. a. Wikipedia „Fingeralphabet",
+   fakoo.de, gebaerdenlernen.de). Bekannte, bewusste Vereinfachungen:
+   J, Z sowie die Umlaut-Buchstaben Ä/Ö/Ü erfordern in echt eine
+   Bewegung (der Avatar deutet das mit einer Wackel-Animation nur an);
+   G/H werden mit Handrücken zur Kamera gebärdet (der Avatar dreht die
+   Hand entsprechend, das 2D-Piktogramm kann das nicht abbilden); ß
+   wird praxisüblich wie „ss" dargestellt. Trotz Recherche: **nicht von
+   Muttersprachler:innen gegengeprüft** – Fehler sind möglich.
 
 ## Funktionen
 

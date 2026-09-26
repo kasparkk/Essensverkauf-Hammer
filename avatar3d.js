@@ -103,9 +103,11 @@ function buildAvatar() {
 function neutralPose() {
   return {
     handZ: 0,
+    handY: 0,
     fingers: [CURL * 0.5, CURL * 0.5, CURL * 0.5, CURL * 0.5],
     fingerZ: [0, 0, 0, 0],
     thumbX: -0.2,
+    thumbY: 0,
     thumbZ: 0.3,
     umlaut: false,
   };
@@ -134,12 +136,19 @@ function poseFromConfig(cfg) {
   } else if (cfg.thumb === "loop") {
     pose.thumbX = -0.55;
     pose.thumbZ = -0.85;
+  } else if (cfg.thumb === "across") {
+    // Daumen schwenkt vorne quer über die Finger (S/ß), sichtbar anders
+    // als der seitlich anliegende Daumen bei A.
+    pose.thumbX = -0.55;
+    pose.thumbY = 1.3;
+    pose.thumbZ = -0.1;
   } else {
     pose.thumbX = -0.25;
     pose.thumbZ = 0.35;
   }
 
   pose.handZ = THREE.MathUtils.degToRad(-(cfg.rotate || 0));
+  pose.handY = cfg.palmYaw ? THREE.MathUtils.degToRad(cfg.palmYaw) : 0;
   pose.umlaut = !!cfg.umlaut;
   return pose;
 }
@@ -173,14 +182,17 @@ export function createSignAvatar(container) {
   let target = neutralPose();
   let tweenStart = 0;
   let tweenDuration = 300;
+  let activeMotion = null;
 
   function applyPose(pose) {
     avatar.handGroup.rotation.z = pose.handZ;
+    avatar.handGroup.rotation.y = pose.handY;
     avatar.fingerPivots.forEach((pivot, i) => {
       pivot.rotation.x = pose.fingers[i];
       pivot.rotation.z = pose.fingerZ[i];
     });
     avatar.thumbPivot.rotation.x = pose.thumbX;
+    avatar.thumbPivot.rotation.y = pose.thumbY || 0;
     avatar.thumbPivot.rotation.z = pose.thumbZ;
     avatar.umlautDots[0].visible = pose.umlaut;
     avatar.umlautDots[1].visible = pose.umlaut;
@@ -189,9 +201,11 @@ export function createSignAvatar(container) {
   function lerpPose(a, b, t) {
     return {
       handZ: THREE.MathUtils.lerp(a.handZ, b.handZ, t),
+      handY: THREE.MathUtils.lerp(a.handY || 0, b.handY || 0, t),
       fingers: a.fingers.map((v, i) => THREE.MathUtils.lerp(v, b.fingers[i], t)),
       fingerZ: a.fingerZ.map((v, i) => THREE.MathUtils.lerp(v, b.fingerZ[i], t)),
       thumbX: THREE.MathUtils.lerp(a.thumbX, b.thumbX, t),
+      thumbY: THREE.MathUtils.lerp(a.thumbY || 0, b.thumbY || 0, t),
       thumbZ: THREE.MathUtils.lerp(a.thumbZ, b.thumbZ, t),
       umlaut: t > 0.5 ? b.umlaut : a.umlaut,
     };
@@ -218,6 +232,16 @@ export function createSignAvatar(container) {
     const t = tweenDuration > 0 ? Math.min(1, (now - tweenStart) / tweenDuration) : 1;
     applyPose(lerpPose(current, target, t));
 
+    // J, Z und die Umlaut-Buchstaben brauchen in echt eine Bewegung
+    // (gezeichneter Buchstabe bzw. kurzer Schwung) statt einer starren
+    // Handform – angenähert durch ein leichtes Wackeln der Hand.
+    if (activeMotion === "wiggle" && t >= 1) {
+      avatar.handGroup.rotation.z += Math.sin(now / 110) * 0.16;
+      avatar.handGroup.position.x = Math.sin(now / 110) * 0.015;
+    } else {
+      avatar.handGroup.position.x = 0;
+    }
+
     bobT += 0.015;
     avatar.root.position.y = Math.sin(bobT) * 0.01;
 
@@ -235,6 +259,7 @@ export function createSignAvatar(container) {
         tweenDuration > 0 ? Math.min(1, (performance.now() - tweenStart) / tweenDuration) : 1
       );
       target = cfg ? poseFromConfig(cfg) : neutralPose();
+      activeMotion = cfg && cfg.motion ? cfg.motion : null;
       tweenStart = performance.now();
       tweenDuration = durationMs || 250;
     },
