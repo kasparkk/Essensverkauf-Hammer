@@ -67,6 +67,7 @@ bleibt, wenn das Betriebssystem es rund oder abgerundet zuschneidet.
 | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Aus `icon.svg` gerenderte Homescreen-Icons |
 | `manifest.webmanifest` | Web-App-Manifest (Name, Farben, Icons)    |
 | `_headers`    | Netlify: korrekter MIME-Typ für das Manifest       |
+| `zeiterfassung/` | Separate App: Arbeitszeit erfassen und Rechnungen erstellen (siehe `zeiterfassung/README.md`) |
 
 ## Hosting
 

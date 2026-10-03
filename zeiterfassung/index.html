@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zeiterfassung &amp; Rechnungen</title>
+  <meta name="theme-color" content="#2f6fb5" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header no-print">
+    <h1>Zeiterfassung</h1>
+    <p class="subtitle">Arbeitszeit erfassen &ndash; Rechnung auf Knopfdruck</p>
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab" data-tab="time" role="tab">Zeiten</button>
+      <button type="button" class="tab" data-tab="clients" role="tab">Kunden</button>
+      <button type="button" class="tab" data-tab="invoices" role="tab">Rechnungen</button>
+      <button type="button" class="tab" data-tab="settings" role="tab">Meine Daten</button>
+    </nav>
+  </header>
+
+  <main class="no-print">
+    <!-- ============ Zeiten ============ -->
+    <section id="tab-time" class="tab-panel">
+      <div class="card timer-card">
+        <h2>Stoppuhr</h2>
+        <form id="timer-form" class="grid-form">
+          <label>Kunde
+            <select id="timer-client" class="client-select" required></select>
+          </label>
+          <label class="span-2">Tätigkeit
+            <input type="text" id="timer-desc" placeholder="z. B. Website überarbeiten" maxlength="120" />
+          </label>
+          <div class="timer-row span-2">
+            <span id="timer-display" class="timer-display">0:00:00</span>
+            <button type="submit" id="timer-btn" class="btn-primary">Start</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Zeit nachtragen</h2>
+        <form id="manual-form" class="grid-form">
+          <label>Kunde
+            <select id="manual-client" class="client-select" required></select>
+          </label>
+          <label>Datum
+            <input type="date" id="manual-date" required />
+          </label>
+          <label>Von
+            <input type="time" id="manual-start" required />
+          </label>
+          <label>Bis
+            <input type="time" id="manual-end" required />
+          </label>
+          <label class="span-2">Tätigkeit
+            <input type="text" id="manual-desc" placeholder="Was wurde gemacht?" maxlength="120" />
+          </label>
+          <button type="submit" class="btn-primary span-2">Eintrag speichern</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Einträge</h2>
+          <label class="inline-filter">
+            <input type="checkbox" id="show-billed" /> abgerechnete zeigen
+          </label>
+        </div>
+        <p id="entries-summary" class="muted"></p>
+        <ul id="entry-list" class="entry-list"></ul>
+      </div>
+    </section>
+
+    <!-- ============ Kunden ============ -->
+    <section id="tab-clients" class="tab-panel" hidden>
+      <div class="card">
+        <h2 id="client-form-title">Neuer Kunde</h2>
+        <form id="client-form" class="grid-form">
+          <input type="hidden" id="client-id" />
+          <label class="span-2">Name / Firma
+            <input type="text" id="client-name" required maxlength="80" />
+          </label>
+          <label class="span-2">Ansprechpartner
+            <input type="text" id="client-contact" maxlength="80" />
+          </label>
+          <label class="span-2">Straße und Hausnummer
+            <input type="text" id="client-street" maxlength="80" />
+          </label>
+          <label>PLZ
+            <input type="text" id="client-zip" maxlength="10" />
+          </label>
+          <label>Ort
+            <input type="text" id="client-city" maxlength="60" />
+          </label>
+          <label>E-Mail
+            <input type="email" id="client-email" maxlength="80" />
+          </label>
+          <label>Stundensatz (€)
+            <input type="text" inputmode="decimal" id="client-rate" placeholder="leer = Standardsatz" />
+          </label>
+          <div class="span-2 button-row">
+            <button type="submit" class="btn-primary">Speichern</button>
+            <button type="button" id="client-cancel" class="btn-secondary" hidden>Abbrechen</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Kundenliste</h2>
+        <ul id="client-list" class="plain-list"></ul>
+      </div>
+    </section>
+
+    <!-- ============ Rechnungen ============ -->
+    <section id="tab-invoices" class="tab-panel" hidden>
+      <div class="card">
+        <h2>Neue Rechnung</h2>
+        <form id="invoice-form">
+          <div class="grid-form">
+            <label class="span-2">Kunde
+              <select id="inv-client" class="client-select" required></select>
+            </label>
+            <label>Leistungszeitraum von
+              <input type="date" id="inv-from" />
+            </label>
+            <label>bis
+              <input type="date" id="inv-to" />
+            </label>
+            <div class="span-2 button-row">
+              <button type="button" id="inv-load" class="btn-secondary">Offene Zeiten übernehmen</button>
+              <label class="inline-filter">
+                <input type="checkbox" id="inv-group" checked /> gleiche Tätigkeiten zusammenfassen
+              </label>
+            </div>
+            <label>Rechnungsnummer
+              <input type="text" id="inv-number" required maxlength="40" />
+            </label>
+            <label>Rechnungsdatum
+              <input type="date" id="inv-date" required />
+            </label>
+            <label>Zahlungsziel (Tage)
+              <input type="number" id="inv-due-days" min="0" max="365" required />
+            </label>
+            <label>Betreff
+              <input type="text" id="inv-subject" maxlength="120" placeholder="Rechnung" />
+            </label>
+          </div>
+
+          <h3>Positionen</h3>
+          <div class="table-scroll">
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Beschreibung</th>
+                  <th class="num">Menge</th>
+                  <th>Einheit</th>
+                  <th class="num">Einzelpreis €</th>
+                  <th class="num">Gesamt</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="inv-items"></tbody>
+            </table>
+          </div>
+          <button type="button" id="inv-add-item" class="btn-secondary small">+ Position hinzufügen</button>
+
+          <div class="inv-totals" id="inv-totals"></div>
+
+          <label class="block">Hinweis / Freitext auf der Rechnung
+            <textarea id="inv-notes" rows="3" maxlength="1000" placeholder="z. B. Vielen Dank für die gute Zusammenarbeit!"></textarea>
+          </label>
+
+          <div class="button-row">
+            <button type="submit" class="btn-primary">Rechnung erstellen</button>
+            <button type="button" id="inv-clear" class="btn-secondary">Formular leeren</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Erstellte Rechnungen</h2>
+        <ul id="invoice-list" class="plain-list"></ul>
+      </div>
+    </section>
+
+    <!-- ============ Meine Daten ============ -->
+    <section id="tab-settings" class="tab-panel" hidden>
+      <div class="card">
+        <h2>Absender (erscheint auf jeder Rechnung)</h2>
+        <form id="settings-form" class="grid-form">
+          <label class="span-2">Name
+            <input type="text" name="name" maxlength="80" />
+          </label>
+          <label class="span-2">Firma (optional)
+            <input type="text" name="company" maxlength="80" />
+          </label>
+          <label class="span-2">Straße und Hausnummer
+            <input type="text" name="street" maxlength="80" />
+          </label>
+          <label>PLZ
+            <input type="text" name="zip" maxlength="10" />
+          </label>
+          <label>Ort
+            <input type="text" name="city" maxlength="60" />
+          </label>
+          <label>E-Mail
+            <input type="email" name="email" maxlength="80" />
+          </label>
+          <label>Telefon
+            <input type="text" name="phone" maxlength="40" />
+          </label>
+          <label>Steuernummer
+            <input type="text" name="taxNumber" maxlength="40" />
+          </label>
+          <label>USt-IdNr.
+            <input type="text" name="vatId" maxlength="40" />
+          </label>
+          <label class="span-2">Bank
+            <input type="text" name="bank" maxlength="80" />
+          </label>
+          <label>IBAN
+            <input type="text" name="iban" maxlength="40" />
+          </label>
+          <label>BIC
+            <input type="text" name="bic" maxlength="20" />
+          </label>
+
+          <h3 class="span-2">Abrechnung</h3>
+          <label>Standard-Stundensatz (€)
+            <input type="text" inputmode="decimal" name="defaultRate" />
+          </label>
+          <label>Abrechnungstakt
+            <select name="roundingMinutes">
+              <option value="1">minutengenau</option>
+              <option value="5">5 Minuten</option>
+              <option value="15">15 Minuten</option>
+              <option value="30">30 Minuten</option>
+              <option value="60">volle Stunden</option>
+            </select>
+          </label>
+          <label>Umsatzsteuer (%)
+            <input type="text" inputmode="decimal" name="vatRate" />
+          </label>
+          <label>Zahlungsziel (Tage)
+            <input type="number" name="paymentDays" min="0" max="365" />
+          </label>
+          <label class="span-2 checkbox-label">
+            <input type="checkbox" name="smallBusiness" />
+            Kleinunternehmer nach § 19 UStG (keine Umsatzsteuer ausweisen)
+          </label>
+          <label>Präfix Rechnungsnummer
+            <input type="text" name="invoicePrefix" maxlength="20" />
+          </label>
+          <label>Nächste laufende Nummer
+            <input type="number" name="nextInvoiceNumber" min="1" />
+          </label>
+
+          <div class="span-2 button-row">
+            <button type="submit" class="btn-primary">Speichern</button>
+            <span id="settings-saved" class="muted" hidden>Gespeichert ✓</span>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Datensicherung</h2>
+        <p class="muted">Alle Daten liegen nur in diesem Browser. Sichere sie regelmäßig als Datei.</p>
+        <div class="button-row">
+          <button type="button" id="export-btn" class="btn-secondary">Backup herunterladen</button>
+          <label class="btn-secondary file-btn">Backup einspielen
+            <input type="file" id="import-file" accept="application/json,.json" hidden />
+          </label>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ Rechnungsansicht (druckbar) ============ -->
+  <div id="invoice-view" hidden>
+    <div class="invoice-toolbar no-print">
+      <button type="button" id="inv-back" class="btn-secondary">&larr; Zurück</button>
+      <button type="button" id="inv-print" class="btn-primary">Drucken / als PDF speichern</button>
+    </div>
+    <article id="invoice-paper" class="invoice-paper"></article>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
