@@ -272,6 +272,9 @@
             <input type="file" id="import-file" accept="application/json,.json" hidden />
           </label>
         </div>
+        <div class="button-row">
+          <button type="button" id="wipe-btn" class="btn-danger">Alle Daten löschen</button>
+        </div>
       </div>
     </section>
   </main>
@@ -283,6 +286,16 @@
       <button type="button" id="inv-print" class="btn-primary">Drucken / als PDF speichern</button>
     </div>
     <article id="invoice-paper" class="invoice-paper"></article>
+  </div>
+
+  <div id="dialog" class="dialog-backdrop no-print" hidden>
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-text">
+      <p id="dialog-text"></p>
+      <div class="button-row">
+        <button type="button" id="dialog-cancel" class="btn-secondary">Abbrechen</button>
+        <button type="button" id="dialog-ok" class="btn-primary">OK</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

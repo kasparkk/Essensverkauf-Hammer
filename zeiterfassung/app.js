@@ -67,7 +67,11 @@
   }
 
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // Speicher voll oder blockiert (z. B. privates Fenster): App läuft weiter, nur ohne Speicherung.
+    }
   }
 
   function cryptoId() {
@@ -177,6 +181,55 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Hinweise und Rückfragen im Seitenlayout (statt alert/confirm)
+  // ---------------------------------------------------------------------------
+
+  const dialogEl = document.getElementById("dialog");
+  const dialogText = document.getElementById("dialog-text");
+  const dialogOk = document.getElementById("dialog-ok");
+  const dialogCancel = document.getElementById("dialog-cancel");
+  let dialogQueue = Promise.resolve();
+
+  /** Zeigt eine Rückfrage an und liefert true, wenn bestätigt wurde. */
+  function ask(message, { okLabel = "OK", cancelLabel = "Abbrechen", danger = false } = {}) {
+    const run = () =>
+      new Promise((resolve) => {
+        const previousFocus = document.activeElement;
+        dialogText.textContent = message;
+        dialogOk.textContent = okLabel;
+        dialogOk.className = danger ? "btn-danger-solid" : "btn-primary";
+        dialogCancel.textContent = cancelLabel || "";
+        dialogCancel.hidden = !cancelLabel;
+        dialogEl.hidden = false;
+        dialogOk.focus();
+
+        const close = (result) => {
+          dialogEl.hidden = true;
+          dialogOk.removeEventListener("click", onOk);
+          dialogCancel.removeEventListener("click", onCancel);
+          document.removeEventListener("keydown", onKey);
+          if (previousFocus && previousFocus.focus) previousFocus.focus();
+          resolve(result);
+        };
+        const onOk = () => close(true);
+        const onCancel = () => close(false);
+        const onKey = (event) => {
+          if (event.key === "Escape") close(!cancelLabel);
+        };
+        dialogOk.addEventListener("click", onOk);
+        dialogCancel.addEventListener("click", onCancel);
+        document.addEventListener("keydown", onKey);
+      });
+    const result = dialogQueue.then(run);
+    dialogQueue = result.catch(() => {});
+    return result;
+  }
+
+  function notify(message) {
+    return ask(message, { cancelLabel: null });
+  }
+
+  // ---------------------------------------------------------------------------
   // Tabs
   // ---------------------------------------------------------------------------
 
@@ -262,12 +315,12 @@
     }
   });
 
-  timerForm.addEventListener("submit", (event) => {
+  timerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (state.timer) {
       const end = Date.now();
       if (end - state.timer.startedAt < 60000) {
-        if (!confirm("Weniger als eine Minute gelaufen. Trotzdem speichern?")) {
+        if (!(await ask("Weniger als eine Minute gelaufen. Trotzdem speichern?", { okLabel: "Speichern", cancelLabel: "Verwerfen" }))) {
           state.timer = null;
           save();
           updateTimerUi();
@@ -288,7 +341,7 @@
       renderEntries();
     } else {
       if (!clientById(timerClient.value)) {
-        alert("Bitte zuerst unter „Kunden“ einen Kunden anlegen.");
+        notify("Bitte zuerst unter „Kunden“ einen Kunden anlegen.");
         return;
       }
       state.timer = {
@@ -311,7 +364,7 @@
     event.preventDefault();
     const clientId = document.getElementById("manual-client").value;
     if (!clientById(clientId)) {
-      alert("Bitte zuerst unter „Kunden“ einen Kunden anlegen.");
+      notify("Bitte zuerst unter „Kunden“ einen Kunden anlegen.");
       return;
     }
     const date = document.getElementById("manual-date").value;
@@ -395,8 +448,8 @@
         del.className = "icon-btn";
         del.setAttribute("aria-label", "Eintrag löschen");
         del.textContent = "×";
-        del.addEventListener("click", () => {
-          if (!confirm("Diesen Eintrag löschen?")) return;
+        del.addEventListener("click", async () => {
+          if (!(await ask("Diesen Eintrag löschen?", { okLabel: "Löschen", danger: true }))) return;
           state.entries = state.entries.filter((e) => e.id !== entry.id);
           save();
           renderEntries();
@@ -443,7 +496,7 @@
     const rateText = document.getElementById("client-rate").value.trim();
     data.rate = rateText ? parseDecimal(rateText) : null;
     if (rateText && data.rate === null) {
-      alert("Der Stundensatz ist keine gültige Zahl.");
+      notify("Der Stundensatz ist keine gültige Zahl.");
       return;
     }
     if (!data.name) return;
@@ -481,12 +534,12 @@
           <button type="button" class="btn-danger small" data-act="delete">Löschen</button>
         </div>`;
       li.querySelector('[data-act="edit"]').addEventListener("click", () => editClient(client));
-      li.querySelector('[data-act="delete"]').addEventListener("click", () => {
+      li.querySelector('[data-act="delete"]').addEventListener("click", async () => {
         if (state.entries.some((e) => e.clientId === client.id)) {
-          alert("Zu diesem Kunden gibt es noch Zeiteinträge. Bitte diese zuerst löschen.");
+          notify("Zu diesem Kunden gibt es noch Zeiteinträge. Bitte diese zuerst löschen.");
           return;
         }
-        if (!confirm(`Kunde „${client.name}“ löschen?`)) return;
+        if (!(await ask(`Kunde „${client.name}“ löschen?`, { okLabel: "Löschen", danger: true }))) return;
         state.clients = state.clients.filter((c) => c.id !== client.id);
         save();
         renderAll();
@@ -523,7 +576,7 @@
   function loadOpenEntries() {
     const client = clientById(invClient.value);
     if (!client) {
-      alert("Bitte einen Kunden auswählen.");
+      notify("Bitte einen Kunden auswählen.");
       return;
     }
     const from = invFrom.value;
@@ -537,7 +590,7 @@
       .sort((a, b) => a.start - b.start);
 
     if (entries.length === 0) {
-      alert("Für diesen Kunden gibt es im gewählten Zeitraum keine offenen Zeiten.");
+      notify("Für diesen Kunden gibt es im gewählten Zeitraum keine offenen Zeiten.");
       return;
     }
 
@@ -638,8 +691,8 @@
   }
 
   document.getElementById("inv-load").addEventListener("click", loadOpenEntries);
-  document.getElementById("inv-clear").addEventListener("click", () => {
-    if (draft.items.length && !confirm("Formular wirklich leeren?")) return;
+  document.getElementById("inv-clear").addEventListener("click", async () => {
+    if (draft.items.length && !(await ask("Formular wirklich leeren?", { okLabel: "Leeren" }))) return;
     resetInvoiceForm();
   });
   document.getElementById("inv-add-item").addEventListener("click", () => {
@@ -661,21 +714,21 @@
     event.preventDefault();
     const client = clientById(invClient.value);
     if (!client) {
-      alert("Bitte einen Kunden auswählen.");
+      notify("Bitte einen Kunden auswählen.");
       return;
     }
     const items = draft.items.filter((i) => i.description.trim() || i.quantity || i.unitPriceCents);
     if (items.length === 0) {
-      alert("Die Rechnung hat noch keine Positionen.");
+      notify("Die Rechnung hat noch keine Positionen.");
       return;
     }
     if (invItemsBody.querySelector(".invalid")) {
-      alert("Bitte die rot markierten Felder korrigieren.");
+      notify("Bitte die rot markierten Felder korrigieren.");
       return;
     }
     const number = document.getElementById("inv-number").value.trim();
     if (state.invoices.some((i) => i.number === number)) {
-      alert(`Die Rechnungsnummer „${number}“ ist bereits vergeben.`);
+      notify(`Die Rechnungsnummer „${number}“ ist bereits vergeben.`);
       return;
     }
 
@@ -758,11 +811,12 @@
         save();
         renderInvoices();
       });
-      li.querySelector('[data-act="delete"]').addEventListener("click", () => {
-        if (!confirm(
+      li.querySelector('[data-act="delete"]').addEventListener("click", async () => {
+        if (!(await ask(
           `Rechnung ${invoice.number} löschen? Die zugehörigen Zeiten werden wieder als offen markiert.\n\n` +
-          "Hinweis: Bereits verschickte Rechnungen sollten statt gelöscht besser storniert werden."
-        )) return;
+          "Hinweis: Bereits verschickte Rechnungen sollten statt gelöscht besser storniert werden.",
+          { okLabel: "Löschen", danger: true }
+        ))) return;
         state.invoices = state.invoices.filter((i) => i.id !== invoice.id);
         for (const entry of state.entries) {
           if (entry.invoiceId === invoice.id) entry.invoiceId = null;
@@ -918,7 +972,7 @@
       else if (numericSettings.includes(el.name)) {
         const value = parseDecimal(el.value);
         if (value === null) {
-          alert("Bitte eine gültige Zahl eingeben: " + el.closest("label").firstChild.textContent.trim());
+          notify("Bitte eine gültige Zahl eingeben: " + el.closest("label").firstChild.textContent.trim());
           el.focus();
           return;
         }
@@ -956,15 +1010,27 @@
     try {
       const imported = normalizeState(JSON.parse(await file.text()));
       if (!imported) throw new Error("Format");
-      if (!confirm("Alle aktuellen Daten durch das Backup ersetzen?")) return;
+      if (!(await ask("Alle aktuellen Daten durch das Backup ersetzen?", { okLabel: "Ersetzen", danger: true }))) return;
       state = imported;
       save();
       resetInvoiceForm();
       renderAll();
-      alert("Backup eingespielt.");
+      notify("Backup eingespielt.");
     } catch {
-      alert("Die Datei ist kein gültiges Backup dieser App.");
+      notify("Die Datei ist kein gültiges Backup dieser App.");
     }
+  });
+
+  document.getElementById("wipe-btn").addEventListener("click", async () => {
+    if (!(await ask(
+      "Wirklich alle Kunden, Zeiten, Rechnungen und deine Absenderdaten löschen? Das lässt sich nicht rückgängig machen.",
+      { okLabel: "Alles löschen", danger: true }
+    ))) return;
+    state = { settings: { ...DEFAULT_SETTINGS }, clients: [], entries: [], invoices: [], timer: null };
+    save();
+    resetInvoiceForm();
+    renderAll();
+    showTab("settings");
   });
 
   // ---------------------------------------------------------------------------
