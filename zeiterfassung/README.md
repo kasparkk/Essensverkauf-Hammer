@@ -10,6 +10,10 @@ Rechnungen zu erstellen. Einfach `index.html` im Browser öffnen.
   laufende Uhr übersteht auch ein Neuladen oder Schließen der Seite.
 - **Zeit nachtragen**: Datum, von–bis, Tätigkeit. Zeiten über Mitternacht
   (z. B. 22:00–01:00) werden richtig berechnet.
+- **Kalender**: Monatsübersicht aller erfassten Zeiten. Jeder Tag zeigt die
+  Summe der Stunden; ein Tipp auf einen Tag listet die Einträge und legt für
+  „Zeit nachtragen“ direkt das passende Datum fest. Oben steht die
+  Monatssumme, mit Blättern zwischen den Monaten und einem „Heute“-Knopf.
 - **Kunden**: Adresse, Ansprechpartner und optional ein eigener
   Stundensatz (sonst gilt der Standardsatz).
 - **Rechnungen**:

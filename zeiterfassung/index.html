@@ -13,6 +13,7 @@
     <p class="subtitle">Arbeitszeit erfassen &ndash; Rechnung auf Knopfdruck</p>
     <nav class="tabs" role="tablist">
       <button type="button" class="tab" data-tab="time" role="tab">Zeiten</button>
+      <button type="button" class="tab" data-tab="calendar" role="tab">Kalender</button>
       <button type="button" class="tab" data-tab="clients" role="tab">Kunden</button>
       <button type="button" class="tab" data-tab="invoices" role="tab">Rechnungen</button>
       <button type="button" class="tab" data-tab="settings" role="tab">Meine Daten</button>
@@ -69,6 +70,30 @@
         </div>
         <p id="entries-summary" class="muted"></p>
         <ul id="entry-list" class="entry-list"></ul>
+      </div>
+    </section>
+
+    <!-- ============ Kalender ============ -->
+    <section id="tab-calendar" class="tab-panel" hidden>
+      <div class="card">
+        <div class="cal-head">
+          <button type="button" id="cal-prev" class="icon-btn cal-nav" aria-label="Vorheriger Monat">&larr;</button>
+          <h2 id="cal-title">Monat</h2>
+          <button type="button" id="cal-next" class="icon-btn cal-nav" aria-label="Nächster Monat">&rarr;</button>
+          <button type="button" id="cal-today" class="btn-secondary small">Heute</button>
+        </div>
+        <p id="cal-summary" class="muted"></p>
+        <div class="cal-grid" id="cal-weekdays"></div>
+        <div class="cal-grid" id="cal-days"></div>
+        <p class="muted cal-legend">Zahl im Feld = erfasste Stunden an diesem Tag. Tippe auf einen Tag für die Einträge.</p>
+      </div>
+
+      <div class="card" id="cal-day-card" hidden>
+        <div class="card-head">
+          <h2 id="cal-day-title">Tag</h2>
+          <button type="button" id="cal-add" class="btn-secondary small">+ Zeit für diesen Tag</button>
+        </div>
+        <ul id="cal-day-list" class="entry-list"></ul>
       </div>
     </section>
 

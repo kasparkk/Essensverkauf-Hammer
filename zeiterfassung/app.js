@@ -242,6 +242,8 @@
       tab.setAttribute("aria-selected", String(active));
       document.getElementById("tab-" + tab.dataset.tab).hidden = !active;
     }
+    // Kalender beim Öffnen frisch aufbauen, falls inzwischen Zeiten dazukamen.
+    if (name === "calendar") renderCalendar();
     try {
       localStorage.setItem(STORAGE_KEY + ".tab", name);
     } catch {
@@ -428,37 +430,170 @@
     }
 
     for (const entry of visible) {
-      const client = clientById(entry.clientId);
-      const invoice = entry.invoiceId ? state.invoices.find((i) => i.id === entry.invoiceId) : null;
-      const li = document.createElement("li");
-      li.className = "entry" + (entry.invoiceId ? " billed" : "");
-      li.innerHTML = `
-        <div class="entry-main">
-          <strong>${escapeHtml(client ? client.name : "(gelöschter Kunde)")}</strong>
-          <span>${escapeHtml(entry.description || "–")}</span>
-        </div>
-        <div class="entry-meta">
-          <span>${formatDate(isoDate(new Date(entry.start)))}, ${formatTime(entry.start)}–${formatTime(entry.end)}</span>
-          <span class="entry-duration">${formatDuration(entryMinutes(entry))}</span>
-          ${invoice ? `<span class="badge">${escapeHtml(invoice.number)}</span>` : ""}
-        </div>`;
-      if (!entry.invoiceId) {
-        const del = document.createElement("button");
-        del.type = "button";
-        del.className = "icon-btn";
-        del.setAttribute("aria-label", "Eintrag löschen");
-        del.textContent = "×";
-        del.addEventListener("click", async () => {
-          if (!(await ask("Diesen Eintrag löschen?", { okLabel: "Löschen", danger: true }))) return;
-          state.entries = state.entries.filter((e) => e.id !== entry.id);
-          save();
-          renderEntries();
-        });
-        li.append(del);
-      }
-      entryList.append(li);
+      entryList.append(entryItem(entry, renderAll));
     }
   }
+
+  /** Baut eine Listenzeile für einen Zeiteintrag (für die Liste und den Kalender). */
+  function entryItem(entry, onChange) {
+    const client = clientById(entry.clientId);
+    const invoice = entry.invoiceId ? state.invoices.find((i) => i.id === entry.invoiceId) : null;
+    const li = document.createElement("li");
+    li.className = "entry" + (entry.invoiceId ? " billed" : "");
+    li.innerHTML = `
+      <div class="entry-main">
+        <strong>${escapeHtml(client ? client.name : "(gelöschter Kunde)")}</strong>
+        <span>${escapeHtml(entry.description || "–")}</span>
+      </div>
+      <div class="entry-meta">
+        <span>${formatDate(isoDate(new Date(entry.start)))}, ${formatTime(entry.start)}–${formatTime(entry.end)}</span>
+        <span class="entry-duration">${formatDuration(entryMinutes(entry))}</span>
+        ${invoice ? `<span class="badge">${escapeHtml(invoice.number)}</span>` : ""}
+      </div>`;
+    if (!entry.invoiceId) {
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "icon-btn";
+      del.setAttribute("aria-label", "Eintrag löschen");
+      del.textContent = "×";
+      del.addEventListener("click", async () => {
+        if (!(await ask("Diesen Eintrag löschen?", { okLabel: "Löschen", danger: true }))) return;
+        state.entries = state.entries.filter((e) => e.id !== entry.id);
+        save();
+        if (onChange) onChange();
+      });
+      li.append(del);
+    }
+    return li;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Kalender
+  // ---------------------------------------------------------------------------
+
+  const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+  const MONTHS = [
+    "Januar", "Februar", "März", "April", "Mai", "Juni",
+    "Juli", "August", "September", "Oktober", "November", "Dezember",
+  ];
+
+  const calTitle = document.getElementById("cal-title");
+  const calSummary = document.getElementById("cal-summary");
+  const calDaysEl = document.getElementById("cal-days");
+  const calDayCard = document.getElementById("cal-day-card");
+  const calDayTitle = document.getElementById("cal-day-title");
+  const calDayList = document.getElementById("cal-day-list");
+
+  let calCursor = new Date();
+  calCursor.setDate(1);
+  let calSelected = null; // ausgewählter Tag als "YYYY-MM-DD"
+
+  // Wochentagsköpfe einmalig aufbauen.
+  const calWeekdaysEl = document.getElementById("cal-weekdays");
+  calWeekdaysEl.innerHTML = WEEKDAYS.map((d) => `<div class="cal-wd">${d}</div>`).join("");
+
+  /** Summiert die erfassten Minuten je Tag ("YYYY-MM-DD") für einen Monat. */
+  function minutesByDay() {
+    const map = new Map();
+    for (const entry of state.entries) {
+      const day = isoDate(new Date(entry.start));
+      map.set(day, (map.get(day) || 0) + entryMinutes(entry));
+    }
+    return map;
+  }
+
+  function renderCalendar() {
+    const year = calCursor.getFullYear();
+    const month = calCursor.getMonth();
+    calTitle.textContent = `${MONTHS[month]} ${year}`;
+
+    const perDay = minutesByDay();
+    const todayIso = isoDate(new Date());
+
+    // Montag als erster Wochentag: getDay() liefert So=0, wir verschieben.
+    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    let monthMinutes = 0;
+    const cells = [];
+    for (let i = 0; i < firstWeekday; i++) cells.push('<div class="cal-cell empty"></div>');
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${year}-${pad(month + 1)}-${pad(d)}`;
+      const mins = perDay.get(iso) || 0;
+      monthMinutes += mins;
+      const classes = ["cal-cell"];
+      if (mins > 0) classes.push("has-time");
+      if (iso === todayIso) classes.push("today");
+      if (iso === calSelected) classes.push("selected");
+      const hours = mins > 0 ? (mins / 60).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " h" : "";
+      cells.push(
+        `<button type="button" class="${classes.join(" ")}" data-day="${iso}">` +
+          `<span class="cal-num">${d}</span>` +
+          `<span class="cal-hours">${hours}</span>` +
+        `</button>`
+      );
+    }
+    calDaysEl.innerHTML = cells.join("");
+    calSummary.textContent =
+      monthMinutes > 0
+        ? `Erfasst in diesem Monat: ${formatDuration(monthMinutes)}`
+        : "In diesem Monat wurde noch keine Zeit erfasst.";
+
+    for (const btn of calDaysEl.querySelectorAll("[data-day]")) {
+      btn.addEventListener("click", () => selectCalDay(btn.dataset.day));
+    }
+    if (calSelected && calSelected.startsWith(`${year}-${pad(month + 1)}`)) renderCalDay();
+    else hideCalDay();
+  }
+
+  function selectCalDay(iso) {
+    calSelected = iso;
+    renderCalendar();
+    calDayCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function hideCalDay() {
+    calDayCard.hidden = true;
+  }
+
+  function renderCalDay() {
+    const entries = state.entries
+      .filter((e) => isoDate(new Date(e.start)) === calSelected)
+      .sort((a, b) => a.start - b.start);
+    calDayTitle.textContent = formatDate(calSelected);
+    calDayList.innerHTML = "";
+    if (entries.length === 0) {
+      const li = document.createElement("li");
+      li.className = "muted empty";
+      li.textContent = "Keine Einträge an diesem Tag.";
+      calDayList.append(li);
+    } else {
+      for (const entry of entries) calDayList.append(entryItem(entry, renderAll));
+    }
+    calDayCard.hidden = false;
+  }
+
+  document.getElementById("cal-prev").addEventListener("click", () => {
+    calCursor.setMonth(calCursor.getMonth() - 1);
+    renderCalendar();
+  });
+  document.getElementById("cal-next").addEventListener("click", () => {
+    calCursor.setMonth(calCursor.getMonth() + 1);
+    renderCalendar();
+  });
+  document.getElementById("cal-today").addEventListener("click", () => {
+    calCursor = new Date();
+    calCursor.setDate(1);
+    calSelected = isoDate(new Date());
+    renderCalendar();
+  });
+  document.getElementById("cal-add").addEventListener("click", () => {
+    if (calSelected) document.getElementById("manual-date").value = calSelected;
+    showTab("time");
+    const start = document.getElementById("manual-start");
+    document.getElementById("manual-form").scrollIntoView({ behavior: "smooth", block: "center" });
+    start.focus();
+  });
 
   // ---------------------------------------------------------------------------
   // Kunden
@@ -1041,6 +1176,7 @@
     renderClientSelects();
     renderClients();
     renderEntries();
+    renderCalendar();
     renderInvoices();
     fillSettingsForm();
     renderDraftTotals();

@@ -580,6 +580,110 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+/* ---------- Kalender ---------- */
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.cal-head h2 {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.cal-nav {
+  font-size: 1.3rem;
+  color: var(--color-primary);
+}
+
+.cal-nav:hover {
+  color: var(--color-primary-dark);
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-wd {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  padding: 0.25rem 0;
+}
+
+.cal-cell {
+  appearance: none;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 7px;
+  aspect-ratio: 1 / 1;
+  padding: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  cursor: pointer;
+  font: inherit;
+  color: var(--color-text);
+}
+
+.cal-cell.empty {
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.cal-cell.has-time {
+  background: #e8eef6;
+  border-color: #c3d4e8;
+}
+
+.cal-cell.today {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.cal-cell.selected {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.cal-cell:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.cal-num {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cal-hours {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  align-self: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-cell.selected .cal-hours {
+  color: #fff;
+}
+
+.cal-legend {
+  font-size: 0.8rem;
+  margin: 0.75rem 0 0;
+}
+
 /* ---------- Mobil ---------- */
 
 @media (max-width: 560px) {
@@ -593,6 +697,23 @@ button:focus-visible {
 
   .timer-display {
     font-size: 2rem;
+  }
+
+  .cal-grid {
+    gap: 3px;
+  }
+
+  .cal-cell {
+    padding: 0.2rem;
+    border-radius: 5px;
+  }
+
+  .cal-num {
+    font-size: 0.75rem;
+  }
+
+  .cal-hours {
+    font-size: 0.6rem;
   }
 
   .plain-list > li:not(.empty) {
