@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Essensverkauf – Strichliste</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#b5502f" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Essensverkauf" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <img class="logo" src="logo.svg" alt="" width="52" height="52" />
+      <div class="brand-text">
+        <h1>Essensverkauf</h1>
+        <p class="subtitle">Strichliste zum Antippen &ndash; jeder Verkauf ein Tipp</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="totals-bar" aria-label="Zusammenfassung">
+      <div class="total-box">
+        <span class="total-label">Verkaufte Portionen</span>
+        <span id="total-count" class="total-value">0</span>
+      </div>
+      <div class="total-box">
+        <span class="total-label">Gesamteinnahmen</span>
+        <span id="total-revenue" class="total-value">0,00&nbsp;&euro;</span>
+      </div>
+    </section>
+
+    <section aria-label="Artikelliste">
+      <ul id="item-list" class="item-list"></ul>
+    </section>
+
+    <section class="add-item" aria-label="Neuen Artikel anlegen">
+      <h2>Neuen Artikel anlegen</h2>
+      <form id="add-item-form">
+        <input type="text" id="item-name" placeholder="Bezeichnung (z. B. Bratwurst)" required maxlength="40" />
+        <input type="text" inputmode="decimal" id="item-price" placeholder="Preis, z. B. 2,50" required />
+        <button type="submit">Hinzufügen</button>
+      </form>
+    </section>
+
+    <section class="danger-zone">
+      <button id="reset-btn" type="button">Verkauf zurücksetzen</button>
+    </section>
+  </main>
+
+  <template id="item-template">
+    <li class="item-card" data-id="">
+      <div class="item-info">
+        <span class="item-name"></span>
+        <span class="item-price"></span>
+      </div>
+      <div class="tally">
+        <button class="tally-btn minus" type="button" aria-label="Einen Verkauf abziehen">&minus;</button>
+        <span class="tally-count">0</span>
+        <button class="tally-btn plus" type="button" aria-label="Verkauf tippen (zählen)">+</button>
+      </div>
+      <div class="item-subtotal"></div>
+      <button class="remove-item" type="button" aria-label="Artikel entfernen">&times;</button>
+    </li>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

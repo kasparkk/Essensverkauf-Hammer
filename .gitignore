@@ -1,0 +1,5 @@
+# Netlify CLI: lokaler Link-State (Site-Verknüpfung), gehört nicht ins Repo
+.netlify/
+
+# Node
+node_modules/
